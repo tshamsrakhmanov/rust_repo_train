@@ -12,10 +12,10 @@ fn main() {
             .read_line(&mut guess)
             .expect("need to input valid value!");
 
-        let guess: i32 = guess
-            .trim()
-            .parse()
-            .expect("Please enter a valid number!!!");
+        let guess: i32 = match guess.trim().parse() {
+            Ok(num) => num,
+            Err(_) => continue,
+        };
 
         println!("Your guess: {guess}");
 
