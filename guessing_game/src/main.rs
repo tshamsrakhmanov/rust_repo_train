@@ -2,7 +2,7 @@ use rand::Rng;
 use std::{cmp::Ordering, io};
 
 fn main() {
-    let _secret_number = rand::thread_rng().gen_range(1..=100);
+    let secret_number = rand::thread_rng().gen_range(1..=100);
 
     loop {
         println!("Enter your guess:");
@@ -19,7 +19,7 @@ fn main() {
 
         println!("Your guess: {guess}");
 
-        match &guess.cmp(&_secret_number) {
+        match &guess.cmp(&secret_number) {
             Ordering::Equal => {
                 println!("Equal");
                 break;
