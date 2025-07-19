@@ -33,8 +33,17 @@ fn main() {
     //arrays
     let array_1 = [3; 5];
     let array_2 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
-    let array_3: [i32; 5];
+    let array_3: [i32; 5] = [1234, 2345, 3456, 4567, 5678];
+    let array_strs = [
+        "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+    ];
 
     let first_entry = array_1[0];
+    let second_entry = array_2[1];
+    let third_entry = array_strs[4];
+    let one_more_entry = array_3[0];
     println!("Fisrt entry of array_1: {first_entry}");
+    println!("Second entry of array_2: {second_entry}");
+    println!("Third entry of array_strs: {third_entry}");
+    println!("One more entry: {one_more_entry}");
 }
