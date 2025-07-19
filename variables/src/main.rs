@@ -24,5 +24,17 @@ fn main() {
     println!("Here is unpacking tuple by creating new var - destructive method: {x} {y} {z}");
 
     let new_var = new_tup.0;
-    println!("Here is unpacking of tuple by reference with '.' declaration: {new_var}");
+    let new_var1 = new_tup.1;
+    let new_var2 = new_tup.2;
+    println!(
+        "Here is unpacking of tuple by reference with '.' declaration: {new_var} {new_var1} {new_var2}"
+    );
+
+    //arrays
+    let array_1 = [3; 5];
+    let array_2 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+    let array_3: [i32; 5];
+
+    let first_entry = array_1[0];
+    println!("Fisrt entry of array_1: {first_entry}");
 }
