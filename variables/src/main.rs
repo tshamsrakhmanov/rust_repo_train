@@ -21,5 +21,8 @@ fn main() {
     // tuples
     let new_tup: (i32, char, u8) = (1234, 'a', 4);
     let (x, y, z) = new_tup;
-    println!("{x} {y} {z}");
+    println!("Here is unpacking tuple by creating new var - destructive method: {x} {y} {z}");
+
+    let new_var = new_tup.0;
+    println!("Here is unpacking of tuple by reference with '.' declaration: {new_var}");
 }
