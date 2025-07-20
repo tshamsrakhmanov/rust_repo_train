@@ -1,23 +1,27 @@
 const VAR_CONST: i32 = 60 * 60 * 4;
 
 fn main() {
+    println!("INTEGERS");
     // integer example
     let mut q1 = 5;
     println!("Here is value of: {q1}");
     q1 = 6;
     println!("Here is mutated value of : {q1}");
     println!("Here is my constant: {VAR_CONST}");
-
+    println!("---------------------------------------");
+    println!("BOOL");
     // bool
     let var_bool: bool = false;
     println!("Here is bool type: {var_bool}");
-
+    println!("---------------------------------------");
+    println!("CHARS");
     // char-s
     let char_a: char = 'a';
     let char_b = 'v';
     let char_c: char = '😻';
     println!("{char_a}\n{char_b}\n{char_c}");
-
+    println!("---------------------------------------");
+    println!("TUPLES");
     // tuples
     let new_tup: (i32, char, u8) = (1234, 'a', 4);
     let (x, y, z) = new_tup;
@@ -29,7 +33,8 @@ fn main() {
     println!(
         "Here is unpacking of tuple by reference with '.' declaration: {new_var} {new_var1} {new_var2}"
     );
-
+    println!("---------------------------------------");
+    println!("ARRAYS");
     //arrays
     let array_1 = [3; 5];
     let array_2 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
