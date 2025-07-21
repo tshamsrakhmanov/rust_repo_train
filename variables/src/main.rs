@@ -1,8 +1,8 @@
 const VAR_CONST: i32 = 60 * 60 * 4;
 
 fn main() {
-    println!("INTEGERS");
     // integer example
+    println!("INTEGERS");
     let mut q1 = 5;
     println!("Here is value of: {q1}");
     q1 = 6;
@@ -10,11 +10,13 @@ fn main() {
     println!("Here is my constant: {VAR_CONST}");
     println!("---------------------------------------");
     println!("BOOL");
+
     // bool
     let var_bool: bool = false;
     println!("Here is bool type: {var_bool}");
     println!("---------------------------------------");
     println!("CHARS");
+
     // char-s
     let char_a: char = 'a';
     let char_b = 'v';
@@ -22,11 +24,11 @@ fn main() {
     println!("{char_a}\n{char_b}\n{char_c}");
     println!("---------------------------------------");
     println!("TUPLES");
+
     // tuples
     let new_tup: (i32, char, u8) = (1234, 'a', 4);
     let (x, y, z) = new_tup;
     println!("Here is unpacking tuple by creating new var - destructive method: {x} {y} {z}");
-
     let new_var = new_tup.0;
     let new_var1 = new_tup.1;
     let new_var2 = new_tup.2;
@@ -35,6 +37,7 @@ fn main() {
     );
     println!("---------------------------------------");
     println!("ARRAYS");
+
     //arrays
     let array_1 = [3; 5];
     let array_2 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
