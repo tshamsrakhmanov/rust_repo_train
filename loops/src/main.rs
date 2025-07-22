@@ -2,6 +2,8 @@ fn main() {
     example_2();
     println!("------------------------------------------------");
     example_3();
+    println!("--------------------------------------------");
+    example_4();
 }
 
 fn example_2() {
@@ -33,4 +35,14 @@ fn example_3() {
             y += 1;
         }
     }
+}
+
+fn example_4() {
+    let mut x = 10;
+
+    while x != -1 {
+        println!("...{x}");
+        x -= 1;
+    }
+    println!("Poehali!");
 }
