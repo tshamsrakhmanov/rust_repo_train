@@ -4,6 +4,12 @@ fn main() {
     example_3();
     println!("--------------------------------------------");
     example_4();
+    println!("--------------------------------------------");
+    example_5();
+    println!("--------------------------------------------");
+    example_6();
+    println!("--------------------------------------------");
+    example_7();
 }
 
 fn example_2() {
@@ -45,4 +51,29 @@ fn example_4() {
         x -= 1;
     }
     println!("Poehali!");
+}
+
+fn example_5() {
+    let array_1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+
+    let mut x = 9;
+
+    while x != 0 {
+        println!("value is:{}", array_1[x]);
+        x -= 1;
+    }
+}
+
+fn example_6() {
+    let a = [1, 2, 3, 4, 5];
+
+    for i in a {
+        println!("{}", i);
+    }
+}
+
+fn example_7() {
+    for i in 150..157 {
+        println!("{}", i);
+    }
 }
