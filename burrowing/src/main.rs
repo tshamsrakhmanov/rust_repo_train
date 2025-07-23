@@ -14,8 +14,14 @@ fn main() {
 
     let mut str5: String = String::new();
     str5.push_str("[Base value of variable]");
-    modifu_add_prefix(&mut str5);
+    modify_str_by_add_prefif(&mut str5);
+    modify_str_by_add_prefif(&mut str5);
     println!("{str5}");
+
+    let mut str6: String = String::from("[base string]");
+    let str7: String = String::from("[add by function]");
+    append_str_to_str(&mut str6, &str7);
+    println!("{str6}");
 }
 
 fn return_string() -> String {
@@ -42,6 +48,10 @@ fn add_prefix_suffix(str: &String) -> String {
     i
 }
 
-fn modifu_add_prefix(str: &mut String) {
+fn modify_str_by_add_prefif(str: &mut String) {
     str.push_str("[add by fucntion to passed variable]");
+}
+
+fn append_str_to_str(str1: &mut String, str2: &String) {
+    str1.push_str(str2);
 }
