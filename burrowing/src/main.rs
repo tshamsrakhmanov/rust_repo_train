@@ -7,6 +7,15 @@ fn main() {
 
     let str3: String = String::from("String to modify and print");
     append_no_modify_print(&str3);
+
+    let str4: String = String::from("WORD");
+    let str5 = add_prefix_suffix(&str4);
+    println!("{str5}");
+
+    let mut str5: String = String::new();
+    str5.push_str("[Base value of variable]");
+    modifu_add_prefix(&mut str5);
+    println!("{str5}");
 }
 
 fn return_string() -> String {
@@ -19,8 +28,20 @@ fn print_str_by_referal(str: &String) {
 }
 
 fn append_no_modify_print(str: &String) {
-    let mut temp_str: String = String::new();
-    temp_str.push_str(str);
-    temp_str.push_str("[THIS SECTION FROM FUNCTION]");
-    println!("{temp_str}");
+    let mut i: String = String::new();
+    i.push_str(str);
+    i.push_str("[THIS SECTION FROM FUNCTION]");
+    println!("{i}");
+}
+
+fn add_prefix_suffix(str: &String) -> String {
+    let mut i: String = String::new();
+    i.push_str("[PREFIX]");
+    i.push_str(str);
+    i.push_str("[SUFFIX]");
+    i
+}
+
+fn modifu_add_prefix(str: &mut String) {
+    str.push_str("[add by fucntion to passed variable]");
 }
