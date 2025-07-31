@@ -22,6 +22,11 @@ fn main() {
 
     println!("{t1:?}");
     println!("{new_user:?}");
+
+    println!("--------------------------");
+    let asdf = 5;
+    let qwe = dbg!(&asdf * 4);
+    println!("{qwe}");
 }
 
 #[derive(Debug)]
