@@ -1,6 +1,9 @@
 fn main() {
     let var1 = RocketShipType::Soyuz;
-    let answer = var1.first_flight_in(1940);
+    let var2 = RocketShipType::Bulava;
+    let var3 = RocketShipType::Energia;
+    let var4 = RocketShipType::Buran;
+    let answer = var1.first_flight_in(1960);
     println!("{answer}");
 }
 
