@@ -27,6 +27,7 @@ enum Coin {
     Level4(CoinType),
 }
 
+#[derive(Debug)]
 enum CoinType {
     Fresh,
     Used,
@@ -37,7 +38,11 @@ fn check_coin(coin: &Coin) -> String {
         Coin::Level1 => String::from("Level 1 coin sends hello!"),
         Coin::Level2 => String::from("Level 2 coin sends hello!"),
         Coin::Level3 => String::from("Level 3 coin sends hello!"),
-        Coin::Level4(CoinType::Used) => String::from("Level 4 USED coin sends hello!"),
-        Coin::Level4(CoinType::Fresh) => String::from("Level 4 FRESH coin sends hello!"),
+        // Coin::Level4(CoinType::Used) => String::from("Level 4 USED coin sends hello!"),
+        // Coin::Level4(CoinType::Fresh) => String::from("Level 4 FRESH coin sends hello!"),
+        Coin::Level4(coin_type) => {
+            println!("{coin_type:?}");
+            String::from("asdffasdfasdf!")
+        }
     }
 }
