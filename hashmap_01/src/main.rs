@@ -24,4 +24,32 @@ fn main() {
         std::collections::hash_map::Entry::Occupied(some_value) => println!("{some_value:?}"),
         std::collections::hash_map::Entry::Vacant(some_value) => println!("{some_value:?}"),
     }
+
+    println!("----------------------------------------");
+
+    // try of change hash map in runtime  - but failed.....
+    let mut hashmap2: HashMap<String, u8> = HashMap::new();
+
+    let str = "some random string with some random values";
+
+    for word in str.split(" ") {
+        let str1 = String::from(word);
+        hashmap2.entry(str1).or_default();
+    }
+
+    println!("{hashmap2:?}");
+
+    println!("----------------------");
+    // example of changing hash map in runtime according to RustBook
+    // somehow works, black magic
+    let text = "hello world wonderful world";
+
+    let mut map = HashMap::new();
+
+    for word in text.split_whitespace() {
+        let count = map.entry(word).or_insert(0);
+        *count += 1;
+    }
+
+    println!("{map:?}");
 }
