@@ -1,0 +1,9 @@
+[package]
+name = "draw_in_terminal"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clearscreen = "4.0.2" # Use the latest version available
+term_size = "=1.0.0-beta.2"
+crossterm = "0.29.0"

@@ -52,4 +52,18 @@ fn main() {
     }
 
     println!("{map:?}");
+
+    println!("-------------------------------------");
+
+    let mut hashmap3: HashMap<String, u8> = HashMap::new();
+
+    let str1 = "some string some string some string";
+    println!("{str1}");
+
+    for word in str1.split_whitespace() {
+        println!("{word}");
+        if hashmap3.entry(word) {
+            // ..
+        }
+    }
 }
