@@ -14,16 +14,7 @@ fn main() {
         // making objects vec
         let mut graphical_objects: Vec<GraphicalObject> = Vec::new();
         let p1 = Point::new(15, 10);
-        let p2 = Point::new(25, 11);
-        let p3 = Point::new(35, 12);
-        let p4 = Point::new(35, 13);
-        let p5 = Point::new(35, 14);
-
         graphical_objects.push(GraphicalObject::Point(p1));
-        graphical_objects.push(GraphicalObject::Point(p2));
-        graphical_objects.push(GraphicalObject::Point(p3));
-        graphical_objects.push(GraphicalObject::Point(p4));
-        graphical_objects.push(GraphicalObject::Point(p5));
 
         let mut objects: Vec<Point> = Vec::new();
 
@@ -100,4 +91,11 @@ impl PartialEq for Point {
 enum GraphicalObject {
     Point(Point),
     Line(Line),
+}
+
+fn brezenhamm(point1: Point, point2: Point) -> Vec<Point> {
+    let m = 2 * (point2.y_coordinate - point1.y_coordinate);
+    let slope_error = 0;
+    let mut y = point1.y_coordinate;
+    // LEFT HERE
 }
