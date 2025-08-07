@@ -16,32 +16,30 @@ fn main() -> io::Result<()> {
             width = result.0;
             lentgh = result.1;
         }
-
         Err(_) => println!("nok"),
     }
 
     execute!(stdout, terminal::Clear(terminal::ClearType::All))?;
-    // execute!(strout, term)
 
     for y in 0..lentgh {
         for x in 0..width {
-            // if (y == 0 || y == a - 1) || (x == 0 || x == b - 1) {
-            //     // in this loop we are more efficient by not flushing the buffer.
-            //     queue!(
-            //         stdout,
-            //         cursor::MoveTo(x, y),
-            //         style::PrintStyledContent("█".red())
-            //     )?;
-            // }
-            if x > 2 && x < width - 2 && y > 2 && y < lentgh - 2 {
+            queue!(
+                stdout,
+                cursor::MoveTo(x, y),
+                style::PrintStyledContent("x".red())
+            )?;
+            if x == 0 || y == 0 || x == width - 1 || y == lentgh - 1 {
                 queue!(
                     stdout,
                     cursor::MoveTo(x, y),
-                    style::PrintStyledContent("X".red())
+                    style::PrintStyledContent("x".yellow())
                 )?;
             }
         }
     }
     stdout.flush()?;
     Ok(())
+    // loop {
+    //     std::thread::sleep(Duration::from_millis(100));
+    // }
 }
