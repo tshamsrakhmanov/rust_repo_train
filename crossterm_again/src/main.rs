@@ -21,12 +21,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // get terminal size to adapt for it
     let size = size()?;
-    let x_dim = size.0;
-    let y_dim = size.1;
+    let x_dim = size.0 as f32;
+    let y_dim = size.1 as f32;
+
+    let x_scaling_factor = x_dim / 2.0;
+    let y_scalling_factor = y_dim / 2.0;
 
     // set up all point which need to be drawn
-    let mut points_cloud: Vec<(u16, u16)> = Vec::new();
-    for pos in pixel_generator::frame_generator(x_dim, y_dim) {
+    let mut points_cloud: Vec<(f32, f32)> = Vec::new();
+    for pos in pixel_generator::frame_generator() {
         points_cloud.push(pos);
     }
 
@@ -47,7 +50,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // draw frame
-        draw_frame(&mut stdout, &points_cloud)?;
+        draw_frame(
+            &mut stdout,
+            &points_cloud,
+            &x_scaling_factor,
+            &y_scalling_factor,
+        )?;
     }
 
     // clean up terminal
@@ -58,15 +66,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn draw_frame(
     stdout: &mut io::Stdout,
-    points_cloud: &Vec<(u16, u16)>,
+    points_cloud: &Vec<(f32, f32)>,
+    x_scaling_factor: &f32,
+    y_scaling_factor: &f32,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Clear screen and draw new content
     stdout.queue(Clear(ClearType::All))?;
 
     for point in points_cloud {
-        stdout.queue(MoveTo(point.0, point.1))?;
+        let modded_x_coordinate = x_scaling_factor * (point.0 + 1.0);
+        let modded_y_coordinate = y_scaling_factor * (point.1 + 1.0);
+        stdout.queue(MoveTo(
+            modded_x_coordinate as u16,
+            modded_y_coordinate as u16,
+        ))?;
         stdout.queue(SetForegroundColor(Color::White))?;
-        stdout.queue(Print("O"))?;
+        stdout.queue(Print("█"))?;
     }
 
     // Flush all commands at once
