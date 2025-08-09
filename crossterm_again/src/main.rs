@@ -1,7 +1,6 @@
-#[warn(unused_imports)]
 use crossterm::{
     QueueableCommand,
-    cursor::{Hide, MoveTo, Show, position},
+    cursor::{Hide, MoveTo, Show},
     event::{Event, KeyCode, poll, read},
     execute,
     style::{Color, Print, SetForegroundColor},
@@ -11,18 +10,19 @@ use crossterm::{
     },
 };
 
-pub mod pixel_generator;
 use std::io::{self, Write};
 
+pub mod pixel_generator;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // set up refresh rate
+    let fps: f32 = 1.0;
+    let frame_time = 1000.0 / fps;
+
+    // get terminal size to adapt for it
     let size = size()?;
     let x_dim = size.0;
     let y_dim = size.1;
-
-    // Set up terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, Hide)?;
 
     // set up all point which need to be drawn
     let mut points_cloud: Vec<(u16, u16)> = Vec::new();
@@ -30,10 +30,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         points_cloud.push(pos);
     }
 
-    // Main drawing loop
+    // set up terminal
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, Hide)?;
+
+    // main drawing loop
     'main_loop: loop {
         // Handle input
-        if poll(std::time::Duration::from_millis(16))? {
+        if poll(std::time::Duration::from_millis(frame_time as u64))? {
             if let Event::Key(key_event) = read()? {
                 if key_event.code == KeyCode::Char('q') {
                     break 'main_loop;
@@ -41,12 +46,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        // Draw frame
+        // draw frame
         draw_frame(&mut stdout, &points_cloud)?;
-        // std::thread::sleep(Duration::from_millis(10));
     }
 
-    // Clean up terminal
+    // clean up terminal
     execute!(stdout, Show, LeaveAlternateScreen)?;
     disable_raw_mode()?;
     Ok(())
