@@ -46,7 +46,7 @@ fn draw(x: u16, y: u16) -> io::Result<()> {
         style::PrintStyledContent("X".magenta())
     )?;
 
-    queue!(stdout, cursor::MoveTo(0, 1))?;
+    queue!(stdout, cursor::Hide)?;
 
     match disable_raw_mode() {
         Ok(_) => {
