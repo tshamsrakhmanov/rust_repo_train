@@ -1,3 +1,4 @@
+#[warn(unused_imports)]
 use crossterm::{
     QueueableCommand,
     cursor::{Hide, MoveTo, Show, position},
@@ -9,10 +10,9 @@ use crossterm::{
         enable_raw_mode, size,
     },
 };
-use std::{
-    io::{self, Write},
-    time::Duration,
-};
+
+pub mod pixel_generator;
+use std::io::{self, Write};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let size = size()?;
@@ -26,42 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // set up all point which need to be drawn
     let mut points_cloud: Vec<(u16, u16)> = Vec::new();
-
-    // fill points cloud with some data
-    for i in 0..x_dim {
-        for j in 0..y_dim {
-            //..
-            if i == 0 {
-                points_cloud.push((0, j));
-            }
-            if j == 0 {
-                points_cloud.push((i, 0));
-            }
-            if i == x_dim - 1 {
-                points_cloud.push((x_dim - 1, j));
-            }
-            if j == y_dim - 1 {
-                points_cloud.push((i, y_dim - 1));
-            }
-        }
-        //..
-    }
-
-    let line_vertical_down = brezenhamm(20, 20, 20, 25);
-    let line_vertical_up = brezenhamm(20, 20, 20, 15);
-    let line_horizontal_left = brezenhamm(20, 20, 25, 20);
-    let line_horizontal_right = brezenhamm(20, 20, 15, 20);
-
-    for pos in line_vertical_down {
-        points_cloud.push(pos);
-    }
-    for pos in line_vertical_up {
-        points_cloud.push(pos);
-    }
-    for pos in line_horizontal_left {
-        points_cloud.push(pos);
-    }
-    for pos in line_horizontal_right {
+    for pos in pixel_generator::frame_generator(x_dim, y_dim) {
         points_cloud.push(pos);
     }
 
@@ -104,38 +69,4 @@ fn draw_frame(
     stdout.flush()?;
 
     Ok(())
-}
-
-fn brezenhamm(x0: u16, y0: u16, x1: u16, y1: u16) -> Vec<(u16, u16)> {
-    let mut answer: Vec<(u16, u16)> = Vec::new();
-
-    // point case
-    if x0 == x1 && y0 == y1 {
-        answer.push((x0, y0));
-        //..
-    }
-
-    // straight line cases
-    if x0 == x1 && y0 > y1 {
-        for i in y1..y0 {
-            answer.push((x0, i));
-        }
-    }
-    if x0 == x1 && y1 > y0 {
-        for i in y0..y1 {
-            answer.push((x0, i));
-        }
-    }
-    if y0 == y1 && x0 > x1 {
-        for i in x1..x0 {
-            answer.push((i, y0));
-        }
-    }
-    if y0 == y1 && x1 > x0 {
-        for i in x0..x1 {
-            answer.push((i, y0));
-        }
-    }
-
-    answer
 }
