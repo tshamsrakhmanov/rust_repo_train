@@ -10,9 +10,14 @@ use crossterm::{
     },
 };
 
-use std::io::{self, Write};
+use std::{
+    io::{self, Write},
+    os::unix::thread,
+    time::Duration,
+};
 
-pub mod pixel_generator;
+mod math_module;
+mod pixel_generator;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // set up refresh rate
@@ -32,6 +37,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for pos in pixel_generator::frame_generator() {
         points_cloud.push(pos);
     }
+
+    let projection = math_module::calculate_triangles();
+    println!("{projection}");
+
+    std::thread::sleep(Duration::from_millis(3000));
 
     // set up terminal
     enable_raw_mode()?;

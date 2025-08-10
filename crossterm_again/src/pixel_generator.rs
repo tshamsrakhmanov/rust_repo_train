@@ -1,4 +1,7 @@
+// use crate::math_module;
+
 pub fn frame_generator() -> Vec<(f32, f32)> {
+    // plug to call math_module
     let mut frame: Vec<(f32, f32)> = Vec::new();
 
     //  fill up goes here.....
