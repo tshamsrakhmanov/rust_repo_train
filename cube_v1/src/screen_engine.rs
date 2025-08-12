@@ -12,7 +12,7 @@ pub fn calculate(
     let bottom_boundary = -1.0 * (&screen_y_dimension / 2.0);
     let top_boundary = 1.0 * (&screen_y_dimension / 2.0);
     let view = na::Matrix4::look_at_rh(
-        &na::Point3::new(5.0, 5.0, 5.0),
+        &na::Point3::new(100.0, 100.0, 100.0),
         &na::Point3::origin(),
         &na::Vector3::new(0.0, 0.0, -1.0),
     );
