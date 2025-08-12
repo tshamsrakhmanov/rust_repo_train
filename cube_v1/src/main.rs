@@ -37,6 +37,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let point2 = Vector4::new(20.0, 0.0, 0.0, 1.0);
     let point3 = Vector4::new(0.0, 20.0, 0.0, 1.0);
     let point4 = Vector4::new(0.0, 0.0, 10.0, 1.0);
+
+    let rotation_axis = Vector4::new(0.0, 1.0, 0.0, 0.0);
+
     let projection1 = screen_engine::calculate(x_dim, y_dim, point1);
     let projection2 = screen_engine::calculate(x_dim, y_dim, point2);
     let projection3 = screen_engine::calculate(x_dim, y_dim, point3);
@@ -46,6 +49,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     points_cloud.push(projection2);
     points_cloud.push(projection3);
     points_cloud.push(projection4);
+
+    // prepare rotation axis - Y
 
     // prepare drawing engine
     enable_raw_mode()?;

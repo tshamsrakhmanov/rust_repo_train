@@ -1,4 +1,4 @@
-use nalgebra::{self as na, Point2, Vector4};
+use nalgebra::{self as na, Vector4};
 
 pub fn calculate(
     screen_x_dimension: f64,
