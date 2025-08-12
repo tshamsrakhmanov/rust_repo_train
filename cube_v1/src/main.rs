@@ -21,7 +21,6 @@ use std::{
 mod screen_engine;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    std::thread::sleep(Duration::from_millis(100));
     // setup frame time
     let fps: f32 = 20.0;
     let frame_time = 1000.0 / fps;
