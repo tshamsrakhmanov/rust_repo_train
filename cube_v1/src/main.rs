@@ -11,7 +11,7 @@ use crossterm::{
         enable_raw_mode, size,
     },
 };
-use nalgebra::{Matrix4, Point3, Point4, Rotation3, Vector3, Vector4};
+use nalgebra::{Matrix4, Point3, Rotation3, Vector3, Vector4};
 use std::f64::consts::PI;
 use std::io::{self, Write};
 
@@ -19,7 +19,7 @@ mod screen_engine;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // setup frame time
-    let fps: f32 = 20.0;
+    let fps: f32 = 30.0;
     let frame_time = 1000.0 / fps;
 
     // setup screen size
@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // prepare ObjectCube
     let p = Point3::origin();
-    let edge: f64 = 10.0;
+    let edge: f64 = 100.0;
     let cube = ObjectCube::new_from_center(p, edge);
     let ps = cube.get_points();
     let ps2 = cube.get_points();
@@ -61,7 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let mut points_cloud: Vec<(u32, u32)> = Vec::new();
 
-        let edge: f64 = 10.0;
+        let edge: f64 = 8.0;
 
         let point1 = Vector4::new(edge * 2.0, edge * 2.0, edge, 1.0);
         let point2 = Vector4::new(-edge * 2.0, -edge * 2.0, edge, 1.0);
@@ -232,4 +232,5 @@ impl ObjectCube {
     fn get_points(&self) -> &Vec<Vector4<f64>> {
         &self.points
     }
+    fn rotate_cube() {}
 }

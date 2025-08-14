@@ -24,9 +24,9 @@ pub fn calculate(
         0.1,
         100.0,
     );
-    let mvp = projection * view * model;
+    let mvp_projection_view_model_matrix = projection * view * model;
 
-    let point_proj = mvp * point_input;
+    let point_proj = mvp_projection_view_model_matrix * point_input;
 
     let point_ndc = point_proj.xyz() / point_input.w;
     let x1_raw = (screen_x_dimension / 2.0) * (1.0 + point_ndc.x);
