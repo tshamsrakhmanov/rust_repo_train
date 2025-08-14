@@ -11,12 +11,9 @@ use crossterm::{
         enable_raw_mode, size,
     },
 };
-use nalgebra::{Matrix4, Rotation3, Vector3, Vector4};
+use nalgebra::{Matrix4, Point3, Point4, Rotation3, Vector3, Vector4};
 use std::f64::consts::PI;
-use std::{
-    io::{self, Write},
-    time::Duration,
-};
+use std::io::{self, Write};
 
 mod screen_engine;
 
@@ -32,8 +29,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // prepare variable to store rotation factor
     let mut rotary: u8 = 0;
-
+    // variable to count rotation angle
     let angler: u8 = 36;
+
+    // prepare ObjectCube
+    let p = Point3::origin();
+    let edge: f64 = 10.0;
+    let cube = ObjectCube::new_from_center(p, edge);
+    let ps = cube.get_points();
+    let ps2 = cube.get_points();
 
     // prepare drawing engine
     enable_raw_mode()?;
@@ -57,7 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let mut points_cloud: Vec<(u32, u32)> = Vec::new();
 
-        let edge: f64 = 360.0 / angler as f64;
+        let edge: f64 = 10.0;
 
         let point1 = Vector4::new(edge * 2.0, edge * 2.0, edge, 1.0);
         let point2 = Vector4::new(-edge * 2.0, -edge * 2.0, edge, 1.0);
@@ -195,4 +199,37 @@ fn rotate_around_z(point: &Vector4<f64>, angle_radians: f64) -> Vector4<f64> {
     let rotation_matrix = Matrix4::from(rotation);
 
     rotation_matrix * point
+}
+
+struct ObjectCube {
+    points: Vec<Vector4<f64>>,
+}
+
+impl ObjectCube {
+    fn new_from_center(cp: Point3<f64>, e: f64) -> ObjectCube {
+        let mut points: Vec<Vector4<f64>> = Vec::new();
+        let he = e / 2.0; // he - half edge
+        let p1 = Vector4::new(cp.x + he, cp.y + he, cp.z + he, 1.0);
+        let p2 = Vector4::new(cp.x - he, cp.y - he, cp.z + he, 1.0);
+        let p3 = Vector4::new(cp.x - he, cp.y + he, cp.z + he, 1.0);
+        let p4 = Vector4::new(cp.x + he, cp.y - he, cp.z + he, 1.0);
+        let p5 = Vector4::new(cp.x + he, cp.y + he, cp.z - he, 1.0);
+        let p6 = Vector4::new(cp.x - he, cp.y - he, cp.z - he, 1.0);
+        let p7 = Vector4::new(cp.x - he, cp.y + he, cp.z - he, 1.0);
+        let p8 = Vector4::new(cp.x + he, cp.y - he, cp.z - he, 1.0);
+        points.push(p1);
+        points.push(p2);
+        points.push(p3);
+        points.push(p4);
+        points.push(p5);
+        points.push(p6);
+        points.push(p7);
+        points.push(p8);
+        let r = ObjectCube { points: points };
+
+        r
+    }
+    fn get_points(&self) -> &Vec<Vector4<f64>> {
+        &self.points
+    }
 }
