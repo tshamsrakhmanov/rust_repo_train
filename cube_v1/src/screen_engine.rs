@@ -1,11 +1,13 @@
 use nalgebra::{self as na, Vector4};
 
-pub fn calculate(
+pub fn calc(
     screen_x_dimension: f64,
     screen_y_dimension: f64,
     point_input: Vector4<f64>,
-) -> (u32, u32) {
-    let model: na::Matrix4<f64> = na::Matrix4::identity();
+) -> (isize, isize) {
+    let model1: na::Matrix4<f64> = na::Matrix4::new(
+        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 1.0,
+    );
 
     let left_boundary = -1.0 * (&screen_x_dimension / 2.0);
     let right_boundary = 1.0 * (&screen_x_dimension / 2.0);
@@ -24,14 +26,15 @@ pub fn calculate(
         0.1,
         100.0,
     );
-    let mvp_projection_view_model_matrix = projection * view * model;
+    let mvp_projection_view_model_matrix = projection * view * model1;
 
     let point_proj = mvp_projection_view_model_matrix * point_input;
 
     let point_ndc = point_proj.xyz() / point_input.w;
     let x1_raw = (screen_x_dimension / 2.0) * (1.0 + point_ndc.x);
     let y1_raw = (screen_y_dimension / 2.0) * (1.0 + point_ndc.y);
-    let x1 = screen_x_dimension - x1_raw;
 
-    (x1 as u32, y1_raw as u32)
+    let x1_mod = screen_x_dimension - x1_raw;
+
+    (x1_mod as isize, y1_raw as isize)
 }
