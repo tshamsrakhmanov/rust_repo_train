@@ -66,7 +66,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let e: f64 = 15.0; // edge of a cube
 
-        let a = rotary as f64 * 1.0; // angle - to use as rotation step
+        let a = rotary as f64 * 4.0; // angle - to use as rotation step
 
         let p1rot = rot_z(&Vector4::new(e, e, e, 1.0), deg_to_rad(a));
         let p5rot = rot_z(&Vector4::new(e, e, -e, 1.0), deg_to_rad(a));

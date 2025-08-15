@@ -6,7 +6,7 @@ pub fn calc(
     point_input: Vector4<f64>,
 ) -> (isize, isize) {
     let model1: na::Matrix4<f64> = na::Matrix4::new(
-        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 1.0,
+        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.4, 0.0, 0.0, 0.0, 0.0, 1.0,
     );
 
     let left_boundary = -1.0 * (&screen_x_dimension / 2.0);
@@ -14,7 +14,7 @@ pub fn calc(
     let bottom_boundary = -1.0 * (&screen_y_dimension / 2.0);
     let top_boundary = 1.0 * (&screen_y_dimension / 2.0);
     let view = na::Matrix4::look_at_rh(
-        &na::Point3::new(100.0, 100.0, 30.0),
+        &na::Point3::new(1.0, 1.0, 0.6),
         &na::Point3::origin(),
         &na::Vector3::new(0.0, 0.0, -1.0),
     );
