@@ -28,9 +28,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let y_dim = size.1 as f64;
 
     // prepare variable to store rotation factor
-    let mut rotary: u8 = 0;
+    let mut rotary: u16 = 0;
     // variable to count rotation angle
-    let angler: u8 = 36;
+    let angler: u16 = 360;
 
     // prepare ObjectCube
     let p = Point3::origin();
@@ -64,9 +64,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let mut p_buff: Vec<(u16, u16)> = Vec::new();
 
-        let e: f64 = 20.0; // edge of a cube
+        let e: f64 = 15.0; // edge of a cube
 
-        let a = rotary as f64 * 5.0; // angle - to use as rotation step
+        let a = rotary as f64 * 1.0; // angle - to use as rotation step
 
         let p1rot = rot_z(&Vector4::new(e, e, e, 1.0), deg_to_rad(a));
         let p5rot = rot_z(&Vector4::new(e, e, -e, 1.0), deg_to_rad(a));
