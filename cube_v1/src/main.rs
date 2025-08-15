@@ -1,4 +1,4 @@
-use bresenham::Bresenham;
+use bresenham::Bresenham as br;
 use core::f32;
 use crossterm::{
     QueueableCommand,
@@ -64,10 +64,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let mut p_buff: Vec<(u16, u16)> = Vec::new();
 
-        let e: f64 = 10.0; // edge of a cube
+        let e: f64 = 20.0; // edge of a cube
 
         let a = rotary as f64 * 5.0; // angle - to use as rotation step
-        //
 
         let p1rot = rot_z(&Vector4::new(e, e, e, 1.0), deg_to_rad(a));
         let p5rot = rot_z(&Vector4::new(e, e, -e, 1.0), deg_to_rad(a));
@@ -87,18 +86,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let prj7 = screen_engine::calc(x_dim, y_dim, p7rot);
         let prj8 = screen_engine::calc(x_dim, y_dim, p8rot);
 
-        let line1 = Bresenham::new(prj1, prj3);
-        let line2 = Bresenham::new(prj2, prj3);
-        let line3 = Bresenham::new(prj4, prj1);
-        let line4 = Bresenham::new(prj4, prj2);
-        let line5 = Bresenham::new(prj1, prj5);
-        let line6 = Bresenham::new(prj2, prj6);
-        let line7 = Bresenham::new(prj3, prj7);
-        let line8 = Bresenham::new(prj4, prj8);
-        let line9 = Bresenham::new(prj5, prj7);
-        let line10 = Bresenham::new(prj6, prj7);
-        let line11 = Bresenham::new(prj8, prj5);
-        let line12 = Bresenham::new(prj8, prj6);
+        let line1 = br::new(prj1, prj3);
+        let line2 = br::new(prj2, prj3);
+        let line3 = br::new(prj4, prj1);
+        let line4 = br::new(prj4, prj2);
+        let line5 = br::new(prj1, prj5);
+        let line6 = br::new(prj2, prj6);
+        let line7 = br::new(prj3, prj7);
+        let line8 = br::new(prj4, prj8);
+        let line9 = br::new(prj5, prj7);
+        let line10 = br::new(prj6, prj7);
+        let line11 = br::new(prj8, prj5);
+        let line12 = br::new(prj8, prj6);
 
         for pos in line1 {
             p_buff.push((pos.0 as u16, pos.1 as u16));
