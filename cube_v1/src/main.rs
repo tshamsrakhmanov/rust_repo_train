@@ -99,6 +99,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let line11 = br::new(prj8, prj5);
         let line12 = br::new(prj8, prj6);
 
+        p_buff.push((prj1.0 as u16, prj1.1 as u16));
+        p_buff.push((prj2.0 as u16, prj2.1 as u16));
+        p_buff.push((prj3.0 as u16, prj3.1 as u16));
+        p_buff.push((prj4.0 as u16, prj4.1 as u16));
+        p_buff.push((prj5.0 as u16, prj5.1 as u16));
+        p_buff.push((prj6.0 as u16, prj6.1 as u16));
+        p_buff.push((prj7.0 as u16, prj7.1 as u16));
+        p_buff.push((prj8.0 as u16, prj8.1 as u16));
+
         for pos in line1 {
             p_buff.push((pos.0 as u16, pos.1 as u16));
         }
@@ -212,5 +221,4 @@ impl ObjectCube {
     fn get_points(&self) -> &Vec<Vector4<f64>> {
         &self.points
     }
-    fn rotate_cube() {}
 }
