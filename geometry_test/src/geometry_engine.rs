@@ -68,4 +68,17 @@ impl Pyramid {
         r.push(self.point3);
         r
     }
+
+    pub fn get_triangles(&self) -> Vec<Triangle> {
+        let mut r = Vec::new();
+        let t0: Triangle = Triangle::new(self.point0, self.point1, self.point2);
+        let t1: Triangle = Triangle::new(self.point0, self.point2, self.point3);
+        let t2: Triangle = Triangle::new(self.point1, self.point2, self.point3);
+        let t3: Triangle = Triangle::new(self.point0, self.point1, self.point3);
+        r.push(t0);
+        r.push(t1);
+        r.push(t2);
+        r.push(t3);
+        r
+    }
 }
