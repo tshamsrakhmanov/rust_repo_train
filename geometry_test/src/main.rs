@@ -7,7 +7,7 @@ fn main() {
     let p2 = Vector4::new(0.0, 0.0, 10.0, 1.0);
     let p3 = Vector4::new(0.0, 0.0, 0.0, 1.0);
 
-    let pov_vec = Vector4::new(5.0, -5.0, 5.0, 0.0);
+    let pov_vec = Vector4::new(5.0, 5.0, 5.0, 0.0);
 
     let pyr = geometry_engine::Pyramid::new(p0, p1, p2, p3);
     let triangles_of_pyramid = pyr.get_triangles();
