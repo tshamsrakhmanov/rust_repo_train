@@ -2,25 +2,70 @@ use nalgebra::Vector4;
 use std::fmt;
 
 pub struct Triangle {
+    point0: Vector4<f64>,
     point1: Vector4<f64>,
     point2: Vector4<f64>,
-    point3: Vector4<f64>,
 }
 
 impl Triangle {
     pub fn new(p1: Vector4<f64>, p2: Vector4<f64>, p3: Vector4<f64>) -> Triangle {
         let r = Triangle {
-            point1: p1,
-            point2: p2,
-            point3: p3,
+            point0: p1,
+            point1: p2,
+            point2: p3,
         };
 
+        r
+    }
+    pub fn get_points(&self) -> Vec<Vector4<f64>> {
+        let mut r: Vec<Vector4<f64>> = Vec::new();
+        r.push(self.point0);
+        r.push(self.point1);
+        r.push(self.point2);
         r
     }
 }
 
 impl fmt::Display for Triangle {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({}, {}, {})", self.point1, self.point2, self.point3)
+        write!(f, "({}, {}, {})", self.point0, self.point1, self.point2)
+    }
+}
+
+impl fmt::Display for Pyramid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "({}, {}, {}, {})",
+            self.point0, self.point1, self.point2, self.point3
+        )
+    }
+}
+
+pub struct Pyramid {
+    point0: Vector4<f64>,
+    point1: Vector4<f64>,
+    point2: Vector4<f64>,
+    point3: Vector4<f64>,
+}
+
+impl Pyramid {
+    pub fn new(p1: Vector4<f64>, p2: Vector4<f64>, p3: Vector4<f64>, p4: Vector4<f64>) -> Pyramid {
+        let r = Pyramid {
+            point0: p1,
+            point1: p2,
+            point2: p3,
+            point3: p4,
+        };
+        r
+    }
+
+    pub fn get_points(&self) -> Vec<Vector4<f64>> {
+        let mut r: Vec<Vector4<f64>> = Vec::new();
+        r.push(self.point0);
+        r.push(self.point1);
+        r.push(self.point2);
+        r.push(self.point3);
+        r
     }
 }
