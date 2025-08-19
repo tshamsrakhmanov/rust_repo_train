@@ -15,6 +15,7 @@ use nalgebra::{Matrix4, Rotation3, Vector3, Vector4};
 use std::f64::consts::PI;
 use std::io::{self, Write};
 
+mod geometry_engine;
 mod screen_engine;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
