@@ -28,15 +28,24 @@ impl Triangle {
 
     pub fn is_visible(&self, pov: Vector4<f64>) -> bool {
         let mut answer = false;
-        let v1 = Vector3::new(self.point0.x, self.point0.y, self.point0.z);
-        let v2 = Vector3::new(self.point1.x, self.point1.y, self.point1.z);
-        let v1_cross_v2 = v1.cross(&v2);
-        let v3 = Vector4::new(v1_cross_v2.x, v1_cross_v2.y, v1_cross_v2.z, 0.0);
-        let angle_rad = v3.angle(&pov);
+        let v1 = Vector3::new(
+            self.point1.x - self.point0.x,
+            self.point1.y - self.point0.y,
+            self.point1.z - self.point0.z,
+        );
+        let v2 = Vector3::new(
+            self.point2.x - self.point0.x,
+            self.point2.y - self.point0.y,
+            self.point2.z - self.point0.z,
+        );
+        let cross_prd = v1.cross(&v2);
+        let temp_v4_to_v3 = Vector3::new(pov.x, pov.y, pov.z);
+        let angle_rad = cross_prd.angle(&temp_v4_to_v3);
         let angle_deg = angle_rad.to_degrees();
         if angle_deg < 90.0 {
             answer = true;
         }
+        println!("{angle_deg}");
         answer
     }
 }
