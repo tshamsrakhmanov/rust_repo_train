@@ -8,21 +8,19 @@ pub struct Triangle {
     point0: Vector4<f64>,
     point1: Vector4<f64>,
     point2: Vector4<f64>,
-    angle: f64,
 }
 
 impl Triangle {
-    pub fn new(p0: Vector4<f64>, p1: Vector4<f64>, p2: Vector4<f64>, angle: f64) -> Triangle {
+    pub fn new(p0: Vector4<f64>, p1: Vector4<f64>, p2: Vector4<f64>) -> Triangle {
         let r = Triangle {
             point0: p0,
             point1: p1,
             point2: p2,
-            angle: angle,
         };
 
         r
     }
-    pub fn get_points(&self) -> Vec<Vector4<f64>> {
+    pub fn _get_points(&self) -> Vec<Vector4<f64>> {
         let mut r: Vec<Vector4<f64>> = Vec::new();
         r.push(self.point0);
         r.push(self.point1);
@@ -50,6 +48,23 @@ impl Triangle {
             answer = true;
         }
         // println!("{angle_deg}");
+        answer
+    }
+
+    pub fn get_normal_vector(&self) -> Vector4<f64> {
+        let v1 = Vector3::new(
+            self.point1.x - self.point0.x,
+            self.point1.y - self.point0.y,
+            self.point1.z - self.point0.z,
+        );
+        let v2 = Vector3::new(
+            self.point2.x - self.point0.x,
+            self.point2.y - self.point0.y,
+            self.point2.z - self.point0.z,
+        );
+        let cross_prd = v1.cross(&v2);
+        let v4_to_v3 = Vector4::new(cross_prd.x, cross_prd.y, cross_prd.z, 0.0);
+        let answer = v4_to_v3.normalize();
         answer
     }
 }
@@ -127,7 +142,7 @@ impl Pyramid {
 
     pub fn get_triangles(&self) -> Vec<Triangle> {
         let mut r = Vec::new();
-        let t0: Triangle = Triangle::new(self.point0, self.point1, self.point2, self.angle);
+        let t0: Triangle = Triangle::new(self.point0, self.point1, self.point2);
         let t1: Triangle = Triangle::new(self.point1, self.point3, self.point2);
         let t2: Triangle = Triangle::new(self.point2, self.point3, self.point0);
         let t3: Triangle = Triangle::new(self.point1, self.point0, self.point3);
