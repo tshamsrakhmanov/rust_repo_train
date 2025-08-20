@@ -20,7 +20,7 @@ impl Triangle {
 
         r
     }
-    pub fn _get_points(&self) -> Vec<Vector4<f64>> {
+    pub fn get_points(&self) -> Vec<Vector4<f64>> {
         let mut r: Vec<Vector4<f64>> = Vec::new();
         r.push(self.point0);
         r.push(self.point1);
@@ -47,14 +47,28 @@ impl Triangle {
         if angle_deg < 90.0 {
             answer = true;
         }
-        println!("{angle_deg}");
+        // println!("{angle_deg}");
         answer
     }
 }
 
 impl fmt::Display for Triangle {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({}, {}, {})", self.point0, self.point1, self.point2)
+        let p0x = self.point0.x.to_string();
+        let p0y = self.point0.y.to_string();
+        let p0z = self.point0.z.to_string();
+        let p1x = self.point1.x.to_string();
+        let p1y = self.point1.y.to_string();
+        let p1z = self.point1.z.to_string();
+        let p2x = self.point2.x.to_string();
+        let p2y = self.point2.y.to_string();
+        let p2z = self.point2.z.to_string();
+
+        let p0: String = String::from(p0x + "," + &p0y + "," + &p0z);
+        let p1: String = String::from(p1x + "," + &p1y + "," + &p1z);
+        let p2: String = String::from(p2x + "," + &p2y + "," + &p2z);
+
+        write!(f, "Triangle ({}, {}, {})", p0, p1, p2)
     }
 }
 
