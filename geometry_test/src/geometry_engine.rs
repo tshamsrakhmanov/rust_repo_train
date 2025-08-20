@@ -116,7 +116,7 @@ impl fmt::Display for Pyramid {
         let p2: String = String::from(p2x + "," + &p2y + "," + &p2z);
         let p3: String = String::from(p3x + "," + &p3y + "," + &p3z);
 
-        write!(f, "Pyramid ({}, {}, {}, {})", p0, p1, p2, p3)
+        write!(f, "Pyramid [({}), ({}), ({}), ({})]", p0, p1, p2, p3)
     }
 }
 
@@ -160,11 +160,24 @@ impl Pyramid {
         r
     }
 
-    pub fn _rotate_by_vector(point: &Vector4<f64>, angle_radians: f64) -> Vector4<f64> {
-        let rotation = Rotation3::from_axis_angle(&Vector3::z_axis(), angle_radians);
-        let rotation_matrix = Matrix4::from(rotation);
+    pub fn rot_by_vec(&self, rot_vec: &Vector4<f64>, angle_radians: f64) -> Pyramid {
+        let p1 = v4_rot(self.point0, rot_vec, angle_radians);
+        let p2 = v4_rot(self.point1, rot_vec, angle_radians);
+        let p3 = v4_rot(self.point2, rot_vec, angle_radians);
+        let p4 = v4_rot(self.point3, rot_vec, angle_radians);
+        let new_pyramid = Pyramid::new(p1, p2, p3, p4);
+        new_pyramid
+    }
 
-        rotation_matrix * point
+    pub fn rot_by_vec_mut(&mut self, rot_vec: &Vector4<f64>, angle_radians: f64) {
+        let p1 = v4_rot(self.point0, rot_vec, angle_radians);
+        let p2 = v4_rot(self.point1, rot_vec, angle_radians);
+        let p3 = v4_rot(self.point2, rot_vec, angle_radians);
+        let p4 = v4_rot(self.point3, rot_vec, angle_radians);
+        self.point0 = p1;
+        self.point1 = p2;
+        self.point2 = p3;
+        self.point3 = p4;
     }
 }
 

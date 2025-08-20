@@ -4,6 +4,53 @@ use crate::geometry_engine::{Pyramid, deg_to_rad, v4_rot, v4_scl, v4_trs};
 
 mod geometry_engine;
 fn main() {
+    // train1();
+    train2();
+}
+
+fn train2() {
+    let p0 = Vector4::new(10.0, 0.0, 0.0, 1.0);
+    let p1 = Vector4::new(0.0, 10.0, 0.0, 1.0);
+    let p2 = Vector4::new(0.0, 0.0, 10.0, 1.0);
+    let p3 = Vector4::new(0.0, 0.0, 0.0, 1.0);
+
+    let pov_vec = Vector4::new(5.0, 5.0, 5.0, 0.0);
+    let rot_vec = Vector4::new(0.0, 0.0, 1.0, 0.0);
+
+    let mut pyr1 = geometry_engine::Pyramid::new(p0, p1, p2, p3);
+    println!("Pyramid before changes:");
+    println!(" {pyr1}");
+    pyr1.rot_by_vec_mut(&rot_vec, deg_to_rad(90.0));
+    println!("Pyramid after changes:");
+    println!(" {pyr1}");
+
+    let mut scene: Vec<Pyramid> = Vec::new();
+
+    scene.push(pyr1);
+
+    // print view vector
+    println!("-------------------");
+    println!("Point of view vector:");
+    println!(" {pov_vec:?}");
+
+    // visibility check
+    println!("Objects in area:");
+    for object in scene {
+        println!("|{object}");
+        let triangles = object.get_triangles();
+        println!("|Visible triangle of it:");
+        for triangle in triangles {
+            let visibility = triangle.is_visible(pov_vec);
+            if visibility {
+                println!(" {triangle}");
+                let normal_vec = triangle.get_normal_vector();
+                println!(" n:{normal_vec:?}");
+            }
+        }
+    }
+}
+
+fn train1() {
     let p0 = Vector4::new(10.0, 0.0, 0.0, 1.0);
     let p1 = Vector4::new(0.0, 10.0, 0.0, 1.0);
     let p2 = Vector4::new(0.0, 0.0, 10.0, 1.0);
