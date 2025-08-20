@@ -1,5 +1,7 @@
 use nalgebra::Vector4;
 
+use crate::geometry_engine::Pyramid;
+
 mod geometry_engine;
 fn main() {
     let p0 = Vector4::new(10.0, 0.0, 0.0, 1.0);
@@ -9,10 +11,17 @@ fn main() {
 
     let pov_vec = Vector4::new(5.0, 5.0, 5.0, 0.0);
 
-    let pyr = geometry_engine::Pyramid::new(p0, p1, p2, p3);
-    let triangles_of_pyramid = pyr.get_triangles();
+    let pyr1 = geometry_engine::Pyramid::new(p0, p1, p2, p3);
+    let triangles_of_pyramid = pyr1.get_triangles();
     for (i, pos) in triangles_of_pyramid.iter().enumerate() {
         let visibility = pos.is_visible(pov_vec);
         println!("   {i}-{visibility}");
+    }
+
+    let mut scene: Vec<Pyramid> = Vec::new();
+    scene.push(pyr1);
+
+    for pos in scene {
+        println!("{pos}");
     }
 }
