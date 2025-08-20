@@ -1,6 +1,7 @@
 use nalgebra::Matrix4;
 use nalgebra::Point3;
 use nalgebra::Rotation3;
+use nalgebra::Scale3;
 use nalgebra::Translation3;
 use nalgebra::Unit;
 use nalgebra::Vector3;
@@ -167,11 +168,7 @@ impl Pyramid {
     }
 }
 
-pub fn v4_rot_by_vec(
-    point: Vector4<f64>,
-    vector: &Vector4<f64>,
-    angle_radians: f64,
-) -> Vector4<f64> {
+pub fn v4_rot(point: Vector4<f64>, vector: &Vector4<f64>, angle_radians: f64) -> Vector4<f64> {
     let rotation_vector_to_v3 = Vector3::new(vector.x, vector.y, vector.z);
     let rotation_vector_to_normilized_unit = Unit::new_normalize(rotation_vector_to_v3);
     let rotation = Rotation3::from_axis_angle(&rotation_vector_to_normilized_unit, angle_radians);
@@ -180,11 +177,19 @@ pub fn v4_rot_by_vec(
     rotation_matrix * point
 }
 
-pub fn v4_tranl_by_vec(point: Vector4<f64>, vector: &Vector4<f64>) -> Vector4<f64> {
+pub fn v4_trs(point: Vector4<f64>, vector: &Vector4<f64>) -> Vector4<f64> {
     let tranl_v3 = Translation3::new(vector.x, vector.y, vector.z);
     let point_v3 = Point3::new(point.x, point.y, point.z);
     let r = tranl_v3 * point_v3;
     let point_v4 = Vector4::new(r.x, r.y, r.z, 1.0);
+    point_v4
+}
+
+pub fn v4_scl(point: Vector4<f64>, vector: &Vector4<f64>) -> Vector4<f64> {
+    let scale_v3 = Scale3::new(vector.x, vector.y, vector.z);
+    let point_v3 = Point3::new(point.x, point.y, point.z);
+    let s = scale_v3 * point_v3;
+    let point_v4 = Vector4::new(s.x, s.y, s.z, 1.0);
     point_v4
 }
 
