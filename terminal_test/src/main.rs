@@ -50,6 +50,8 @@ fn main() -> io::Result<()> {
     //  LOOP END
 
     // exit alternate screen and this is the end, supposedly )))
+    //
+    stdout.queue(cursor::Show)?;
     stdout.execute(terminal::Clear(terminal::ClearType::All))?;
     disable_raw_mode()?;
     execute!(io::stdout(), LeaveAlternateScreen)
