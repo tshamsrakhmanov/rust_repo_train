@@ -24,9 +24,9 @@ fn train2() {
     println!("Pyramid after changes:");
     println!(" {pyr1}");
 
-    let mut scene: Vec<Pyramid> = Vec::new();
+    let mut view_frostum: Vec<Pyramid> = Vec::new();
 
-    scene.push(pyr1);
+    view_frostum.push(pyr1);
 
     // print view vector
     println!("-------------------");
@@ -35,7 +35,7 @@ fn train2() {
 
     // visibility check
     println!("Objects in area:");
-    for object in scene {
+    for object in view_frostum {
         println!("|{object}");
         let triangles = object.get_triangles();
         println!("|Visible triangle of it:");
@@ -60,8 +60,8 @@ fn train1() {
 
     let pyr1 = geometry_engine::Pyramid::new(p0, p1, p2, p3);
 
-    let mut scene: Vec<Pyramid> = Vec::new();
-    scene.push(pyr1);
+    let mut view_frostum: Vec<Pyramid> = Vec::new();
+    view_frostum.push(pyr1);
 
     // print view vector
     println!("-------------------");
@@ -70,7 +70,7 @@ fn train1() {
 
     // visibility check
     println!("Objects in area:");
-    for object in scene {
+    for object in view_frostum {
         println!(" {object}");
         let triangles = object.get_triangles();
         println!("Visible triangle of it:");
