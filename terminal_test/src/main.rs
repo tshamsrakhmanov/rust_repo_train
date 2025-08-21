@@ -7,12 +7,13 @@ use crossterm::{
         self, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
     },
 };
-use nalgebra::{self, Rotation3, UnitVector3, Vector3, Vector4};
+use nalgebra::{self, Matrix4, Rotation3, UnitVector3, Vector3, Vector4};
 use std::fmt;
 use std::io::{self, Write, stdout};
 use std::time::Duration;
 
 fn main() -> io::Result<()> {
+    // preparation of pyramid model
     let p0 = Vector4::new(0.0, 0.0, 0.0, 1.0);
     let p1 = Vector4::new(10.0, 0.0, 0.0, 1.0);
     let p2 = Vector4::new(0.0, 10.0, 0.0, 1.0);
@@ -23,6 +24,11 @@ fn main() -> io::Result<()> {
     println!("{pyr0}");
     pyr0.rotate_by_vec4_mut(rotation_vector, 10.0);
     println!("{pyr0}");
+    // -->
+
+    // preparation of view projection
+
+    let eye = Vector4::new(5.0, 5.0, 5.0, 0.0);
 
     std::thread::sleep(Duration::from_millis(20000));
     // declare stdout
