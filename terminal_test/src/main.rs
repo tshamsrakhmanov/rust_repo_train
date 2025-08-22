@@ -1,36 +1,58 @@
 use crossterm::style::Print;
 use crossterm::{
     self, ExecutableCommand, QueueableCommand, cursor,
-    event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers, poll, read},
+    event::{Event, KeyCode, poll, read},
     execute,
     terminal::{
-        self, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
+        self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
+        enable_raw_mode, size,
     },
 };
-use nalgebra::{self, Matrix4, Rotation3, UnitVector3, Vector3, Vector4};
+use nalgebra::{self, Matrix4, Point2, Point3, Rotation3, UnitVector3, Vector3, Vector4};
+use rand;
+use round_float::RoundToFraction;
+use std::f64::consts::PI;
 use std::fmt;
 use std::io::{self, Write, stdout};
-use std::time::Duration;
 
 fn main() -> io::Result<()> {
+    // get window size
+
+    let terminal_size = size()?;
+    println!("{terminal_size:?}");
+    let dim_x = terminal_size.0 as f64;
+    let dim_y = terminal_size.1 as f64;
+
+    // preparation of most difficult part - projection matrix
+    // in this exapmple ill not go so far and will use prepared info - such as some vectors and
+    // points values
+
+    let left = -dim_x / 2.0;
+    let right = dim_x / 2.0;
+    let bottom = -dim_y / 2.0;
+    let top = dim_y / 2.0;
+    let znear = 0.0;
+    let zfar = 1.0;
+
+    let eye = Point3::new(5.0, 5.0, 3.0);
+    let target = Point3::new(0.0, 0.0, 0.0);
+    let up = Vector3::new(0.0, 0.0, -1.0);
+
+    let projection_matrix = Matrix4::new_orthographic(left, right, bottom, top, znear, zfar);
+    let view_matrix = Matrix4::look_at_rh(&eye, &target, &up);
+    let model1: Matrix4<f64> = Matrix4::new(
+        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.4, 0.0, 0.0, 0.0, 0.0, 1.0,
+    );
+    let pvm_matrix = projection_matrix * view_matrix * model1;
+
     // preparation of pyramid model
-    let p0 = Vector4::new(0.0, 0.0, 0.0, 1.0);
-    let p1 = Vector4::new(10.0, 0.0, 0.0, 1.0);
-    let p2 = Vector4::new(0.0, 10.0, 0.0, 1.0);
-    let p3 = Vector4::new(0.0, 0.0, 10.0, 1.0);
-    let rotation_vector = Vector4::new(0.0, 0.0, 1.0, 0.0);
+    let edge = 20.0;
+    let p0 = Vector4::new(0.0, edge, edge, 1.0);
+    let p1 = Vector4::new(0.0, -edge, edge, 1.0);
+    let p2 = Vector4::new(edge, 0.0, -edge, 1.0);
+    let p3 = Vector4::new(-edge, 0.0, -edge, 1.0);
+    let mut pyramid = PyramidV4::new(p0, p1, p2, p3);
 
-    let mut pyr0 = PyramidV4::new(p0, p1, p2, p3);
-    println!("{pyr0}");
-    pyr0.rotate_by_vec4_mut(rotation_vector, 10.0);
-    println!("{pyr0}");
-    // -->
-
-    // preparation of view projection
-
-    let eye = Vector4::new(5.0, 5.0, 5.0, 0.0);
-
-    std::thread::sleep(Duration::from_millis(20000));
     // declare stdout
     let mut stdout = stdout();
 
@@ -38,40 +60,89 @@ fn main() -> io::Result<()> {
     enable_raw_mode()?;
     execute!(io::stdout(), EnterAlternateScreen)?;
     stdout.execute(terminal::Clear(terminal::ClearType::All))?;
-
-    stdout.queue(cursor::MoveTo(5, 5))?;
-    stdout.queue(cursor::MoveTo(10, 5))?;
     stdout.queue(cursor::Hide)?;
-    stdout.queue(Print("s"))?;
-    stdout.flush()?;
 
     //  LOOP START
 
-    //     exapmle of drawing
+    // let rotation_vector = Vector4::new(0.2, 0.2, 0.2, 0.0);
+    let angle_deg = 1.55;
+    let mut screen_buffer: Vec<(u16, u16)> = Vec::new();
+
     'main_loop: loop {
-        if poll(Duration::from_millis(100))? {
-            match read()? {
-                Event::Key(event) => {
-                    if event
-                        == (KeyEvent {
-                            code: KeyCode::Char('q'),
-                            modifiers: KeyModifiers::NONE,
-                            kind: KeyEventKind::Press,
-                            state: KeyEventState::NONE,
-                        })
-                    {
-                        break 'main_loop;
-                    };
+        if poll(std::time::Duration::from_millis(40))? {
+            if let Event::Key(key_event) = read()? {
+                if key_event.code == KeyCode::Char('q') {
+                    break 'main_loop;
                 }
-                _ => println!("!"),
             }
         }
-    }
 
+        screen_buffer.clear();
+        // let rotation_vector = Vector4::new(
+        //     rand::random_range(0.0..1.0),
+        //     rand::random_range(0.0..1.0),
+        //     rand::random_range(0.0..1.0),
+        //     0.0,
+        // );
+        let rotation_vector = Vector4::new(0.0, 0.0, 1.0, 0.0);
+        pyramid.rotate_by_vec4_mut(rotation_vector, angle_deg);
+
+        for trianle in pyramid.get_triangles() {
+            let pov_vec4 = Vector4::new(5.0, 5.0, 5.0, 0.0);
+            if trianle.is_visible(&pov_vec4) {
+                let p0_raw = trianle.point0;
+                let p1_raw = trianle.point1;
+                let p2_raw = trianle.point2;
+                let prj_0 = projection(terminal_size.0, terminal_size.1, &pvm_matrix, &p0_raw);
+                let prj_1 = projection(terminal_size.0, terminal_size.1, &pvm_matrix, &p1_raw);
+                let prj_2 = projection(terminal_size.0, terminal_size.1, &pvm_matrix, &p2_raw);
+
+                let br0 = bresenham::Bresenham::new(
+                    (prj_0.0 as isize, prj_0.1 as isize),
+                    (prj_1.0 as isize, prj_1.1 as isize),
+                );
+                let br1 = bresenham::Bresenham::new(
+                    (prj_1.0 as isize, prj_1.1 as isize),
+                    (prj_2.0 as isize, prj_2.1 as isize),
+                );
+                let br2 = bresenham::Bresenham::new(
+                    (prj_2.0 as isize, prj_2.1 as isize),
+                    (prj_0.0 as isize, prj_0.1 as isize),
+                );
+
+                for pos in br0 {
+                    let x = pos.0 as u16;
+                    let y = pos.1 as u16;
+                    screen_buffer.push((x, y));
+                }
+                for pos in br1 {
+                    let x = pos.0 as u16;
+                    let y = pos.1 as u16;
+                    screen_buffer.push((x, y));
+                }
+                for pos in br2 {
+                    let x = pos.0 as u16;
+                    let y = pos.1 as u16;
+                    screen_buffer.push((x, y));
+                }
+                // for point in trianle.get_points() {
+                //     let prj = projection(terminal_size.0, terminal_size.1, &pvm_matrix, &point);
+                //
+                //     screen_buffer.push(prj);
+                // }
+            }
+        }
+
+        stdout.queue(Clear(ClearType::All))?;
+        for pixel in &screen_buffer {
+            stdout.queue(cursor::MoveTo(pixel.0, pixel.1))?;
+            stdout.queue(Print("█"))?;
+        }
+        stdout.flush()?;
+    }
     //  LOOP END
 
     // exit alternate screen and this is the end, supposedly )))
-    //
     stdout.queue(cursor::Show)?;
     stdout.execute(terminal::Clear(terminal::ClearType::All))?;
     disable_raw_mode()?;
@@ -107,19 +178,20 @@ impl TriangleV4 {
         );
         answer
     }
-    fn is_visible(&self, pov_vec4: Vector4<f64>) -> bool {
+    fn is_visible(&self, pov_vec4: &Vector4<f64>) -> bool {
         let mut answer = false;
 
         let norm = self.get_normal();
         let angle = norm.angle(&pov_vec4);
+        let angle_deg = angle.to_degrees();
 
-        if angle < 90.0 {
+        if angle_deg < 90.0 {
             answer = true;
         }
 
         answer
     }
-    fn get_points(&self) -> Vec<Vector4<f64>> {
+    fn _get_points(&self) -> Vec<Vector4<f64>> {
         let mut answer = Vec::new();
         answer.push(self.point0);
         answer.push(self.point1);
@@ -145,7 +217,7 @@ struct PyramidV4 {
 }
 
 impl PyramidV4 {
-    fn get_points(&self) -> Vec<Vector4<f64>> {
+    fn _get_points(&self) -> Vec<Vector4<f64>> {
         let mut answer = Vec::new();
         answer.push(self.point0);
         answer.push(self.point1);
@@ -157,9 +229,9 @@ impl PyramidV4 {
     fn get_triangles(&self) -> Vec<TriangleV4> {
         let mut answer = Vec::new();
         let tri0 = TriangleV4::new(self.point0, self.point1, self.point2);
-        let tri1 = TriangleV4::new(self.point0, self.point2, self.point3);
-        let tri2 = TriangleV4::new(self.point3, self.point1, self.point0);
-        let tri3 = TriangleV4::new(self.point1, self.point3, self.point2);
+        let tri1 = TriangleV4::new(self.point3, self.point1, self.point0);
+        let tri2 = TriangleV4::new(self.point2, self.point3, self.point0);
+        let tri3 = TriangleV4::new(self.point2, self.point1, self.point3);
 
         answer.push(tri0);
         answer.push(tri1);
@@ -188,27 +260,32 @@ impl PyramidV4 {
     }
 }
 
-fn rot_by_vec4(point: Vector4<f64>, rotation_vector: Vector4<f64>, angle_deg: f64) -> Vector4<f64> {
-    let point_v3 = Vector3::new(point.x, point.y, point.z);
-    let rot_vec_v3 = Vector3::new(rotation_vector.x, rotation_vector.y, rotation_vector.z);
-    let unit = UnitVector3::new_normalize(rot_vec_v3);
-    let rotation = Rotation3::from_axis_angle(&unit, angle_deg);
-    let rotatiton_v3 = rotation * point_v3;
-    let answer = Vector4::new(rotatiton_v3.x, rotatiton_v3.y, rotatiton_v3.z, 1.0);
+fn rot_by_vec4(point: Vector4<f64>, rotation_vector: Vector4<f64>, angle_rad: f64) -> Vector4<f64> {
+    let rotation_vector_v3 = Vector3::new(rotation_vector.x, rotation_vector.y, rotation_vector.z);
+    let normalized_rotation_vector_v3 = rotation_vector_v3.normalize();
+    let unit_v3 = UnitVector3::new_normalize(normalized_rotation_vector_v3);
+    let rotation_matrix_v3 = Rotation3::from_axis_angle(&unit_v3, deg_to_rad(angle_rad));
+    let rotation_matrix_v4 = Matrix4::from(rotation_matrix_v3);
+
+    rotation_matrix_v4 * point
+}
+
+fn deg_to_rad(deg: f64) -> f64 {
+    let answer = (PI * deg) / 180.0;
     answer
 }
 
 impl fmt::Display for TriangleV4 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let p0x = self.point0.x;
-        let p1x = self.point1.x;
-        let p2x = self.point2.x;
-        let p0y = self.point0.y;
-        let p1y = self.point1.y;
-        let p2y = self.point2.y;
-        let p0z = self.point0.z;
-        let p1z = self.point1.z;
-        let p2z = self.point2.z;
+        let p0x = self.point0.x.round_to_fraction(2);
+        let p1x = self.point1.x.round_to_fraction(2);
+        let p2x = self.point2.x.round_to_fraction(2);
+        let p0y = self.point0.y.round_to_fraction(2);
+        let p1y = self.point1.y.round_to_fraction(2);
+        let p2y = self.point2.y.round_to_fraction(2);
+        let p0z = self.point0.z.round_to_fraction(2);
+        let p1z = self.point1.z.round_to_fraction(2);
+        let p2z = self.point2.z.round_to_fraction(2);
         write!(
             f,
             "TriangleV4([{},{},{}],[{},{},{}],[{},{},{}])",
@@ -222,8 +299,25 @@ impl fmt::Display for PyramidV4 {
         let triangles = self.get_triangles();
         write!(
             f,
-            "PyramidV4({}, {}, {})",
+            "PyramidV4({}\n          {}\n          {})",
             triangles[0], triangles[1], triangles[2]
         )
     }
+}
+
+fn projection(
+    dim_x: u16,
+    dim_y: u16,
+    pvm_matrix: &Matrix4<f64>,
+    point: &Vector4<f64>,
+) -> (u16, u16) {
+    let projected_point = pvm_matrix * point;
+    let point_wo_w = projected_point / projected_point.w;
+
+    // calculation of x goes with subtraction fro dim-x because of screen reflection
+    // just beleive me for now - it'll work in future
+    let x_raw = dim_x as f64 - (dim_x as f64 / 2.0) * (1.0 + point_wo_w.x);
+    let y_raw = (dim_y as f64 / 2.0) * (1.0 + point_wo_w.y);
+
+    (x_raw as u16, y_raw as u16)
 }
