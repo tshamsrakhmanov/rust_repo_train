@@ -29,8 +29,8 @@ fn main() -> io::Result<()> {
 
     let left = -dim_x / 2.0;
     let right = dim_x / 2.0;
-    let bottom = -dim_y / 2.0;
-    let top = dim_y / 2.0;
+    let bottom = -dim_y / 1.4;
+    let top = dim_y / 1.4;
     let znear = 0.0;
     let zfar = 1.0;
 
@@ -87,8 +87,8 @@ fn main() -> io::Result<()> {
 
         screen_buffer.clear();
         let rotation_vector = Vector4::new(
-            rand::random_range(0.0..0.3),
-            rand::random_range(0.0..0.3),
+            rand::random_range(0.0..0.1),
+            rand::random_range(0.0..0.1),
             rand::random_range(0.0..1.0),
             0.0,
         );
