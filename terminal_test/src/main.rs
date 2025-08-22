@@ -8,7 +8,7 @@ use crossterm::{
         enable_raw_mode, size,
     },
 };
-use nalgebra::{self, Matrix4, Point2, Point3, Rotation3, UnitVector3, Vector3, Vector4};
+use nalgebra::{self, Matrix4, Point3, Rotation3, UnitVector3, Vector3, Vector4};
 use rand;
 use round_float::RoundToFraction;
 use std::f64::consts::PI;
@@ -36,7 +36,7 @@ fn main() -> io::Result<()> {
 
     let pov_x = 10.0;
     let pov_y = 10.0;
-    let pov_z = 5.0;
+    let pov_z = 0.0;
     let eye = Point3::new(pov_x, pov_y, pov_z);
     let target = Point3::new(0.0, 0.0, 0.0);
     let up = Vector3::new(0.0, 0.0, -1.0);
@@ -73,7 +73,7 @@ fn main() -> io::Result<()> {
     //  LOOP START
 
     // let rotation_vector = Vector4::new(0.2, 0.2, 0.2, 0.0);
-    let angle_deg = 1.55;
+    let angle_deg = 8.55;
     let mut screen_buffer: Vec<(u16, u16)> = Vec::new();
 
     'main_loop: loop {
@@ -87,8 +87,8 @@ fn main() -> io::Result<()> {
 
         screen_buffer.clear();
         let rotation_vector = Vector4::new(
-            rand::random_range(0.0..0.1),
-            rand::random_range(0.0..0.1),
+            rand::random_range(0.0..0.3),
+            rand::random_range(0.0..0.3),
             rand::random_range(0.0..1.0),
             0.0,
         );
