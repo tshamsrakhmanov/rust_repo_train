@@ -34,23 +34,31 @@ fn main() -> io::Result<()> {
     let znear = 0.0;
     let zfar = 1.0;
 
-    let eye = Point3::new(5.0, 5.0, 3.0);
+    let pov_x = 10.0;
+    let pov_y = 10.0;
+    let pov_z = 5.0;
+    let eye = Point3::new(pov_x, pov_y, pov_z);
     let target = Point3::new(0.0, 0.0, 0.0);
     let up = Vector3::new(0.0, 0.0, -1.0);
 
     let projection_matrix = Matrix4::new_orthographic(left, right, bottom, top, znear, zfar);
     let view_matrix = Matrix4::look_at_rh(&eye, &target, &up);
-    let model1: Matrix4<f64> = Matrix4::new(
-        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.4, 0.0, 0.0, 0.0, 0.0, 1.0,
-    );
+    let model1 = Matrix4::identity();
+    // let model1: Matrix4<f64> = Matrix4::new(
+    //     1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0, 0.0, 0.0, 1.0,
+    // );
     let pvm_matrix = projection_matrix * view_matrix * model1;
 
     // preparation of pyramid model
-    let edge = 20.0;
+    let edge = 14.0;
     let p0 = Vector4::new(0.0, edge, edge, 1.0);
     let p1 = Vector4::new(0.0, -edge, edge, 1.0);
     let p2 = Vector4::new(edge, 0.0, -edge, 1.0);
     let p3 = Vector4::new(-edge, 0.0, -edge, 1.0);
+    // let p0 = Vector4::new(edge, 0.0, 0.0, 1.0);
+    // let p1 = Vector4::new(0.0, edge, 0.0, 1.0);
+    // let p2 = Vector4::new(0.0, 0.0, edge, 1.0);
+    // let p3 = Vector4::new(0.0, 0.0, 0.0, 1.0);
     let mut pyramid = PyramidV4::new(p0, p1, p2, p3);
 
     // declare stdout
@@ -69,7 +77,7 @@ fn main() -> io::Result<()> {
     let mut screen_buffer: Vec<(u16, u16)> = Vec::new();
 
     'main_loop: loop {
-        if poll(std::time::Duration::from_millis(40))? {
+        if poll(std::time::Duration::from_millis(20))? {
             if let Event::Key(key_event) = read()? {
                 if key_event.code == KeyCode::Char('q') {
                     break 'main_loop;
@@ -78,17 +86,17 @@ fn main() -> io::Result<()> {
         }
 
         screen_buffer.clear();
-        // let rotation_vector = Vector4::new(
-        //     rand::random_range(0.0..1.0),
-        //     rand::random_range(0.0..1.0),
-        //     rand::random_range(0.0..1.0),
-        //     0.0,
-        // );
-        let rotation_vector = Vector4::new(0.0, 0.0, 1.0, 0.0);
+        let rotation_vector = Vector4::new(
+            rand::random_range(0.0..0.1),
+            rand::random_range(0.0..0.1),
+            rand::random_range(0.0..1.0),
+            0.0,
+        );
+        // let rotation_vector = Vector4::new(0.0, 0.0, 1.0, 0.0);
         pyramid.rotate_by_vec4_mut(rotation_vector, angle_deg);
 
         for trianle in pyramid.get_triangles() {
-            let pov_vec4 = Vector4::new(5.0, 5.0, 5.0, 0.0);
+            let pov_vec4 = Vector4::new(pov_x, pov_y, pov_z, 0.0);
             if trianle.is_visible(&pov_vec4) {
                 let p0_raw = trianle.point0;
                 let p1_raw = trianle.point1;
