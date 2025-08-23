@@ -73,12 +73,12 @@ fn main() -> io::Result<()> {
     //  LOOP START
 
     // let rotation_vector = Vector4::new(0.2, 0.2, 0.2, 0.0);
-    let angle_deg = 2.55;
+    let angle_deg = 2.5;
     let mut screen_buffer: Vec<(u16, u16, u16)> = Vec::new();
     let pov_vec4 = Vector4::new(pov_x, pov_y, pov_z, 0.0);
 
     'main_loop: loop {
-        if poll(std::time::Duration::from_millis(5))? {
+        if poll(std::time::Duration::from_millis(10))? {
             if let Event::Key(key_event) = read()? {
                 if key_event.code == KeyCode::Char('q') {
                     break 'main_loop;
