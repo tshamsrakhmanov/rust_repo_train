@@ -78,7 +78,7 @@ fn main() -> io::Result<()> {
     let pov_vec4 = Vector4::new(pov_x, pov_y, pov_z, 0.0);
 
     'main_loop: loop {
-        if poll(std::time::Duration::from_millis(400))? {
+        if poll(std::time::Duration::from_millis(40))? {
             if let Event::Key(key_event) = read()? {
                 if key_event.code == KeyCode::Char('q') {
                     break 'main_loop;
@@ -104,13 +104,12 @@ fn main() -> io::Result<()> {
                 let prj_0 = projection(terminal_size.0, terminal_size.1, &pvm_matrix, &p0_raw);
                 let prj_1 = projection(terminal_size.0, terminal_size.1, &pvm_matrix, &p1_raw);
                 let prj_2 = projection(terminal_size.0, terminal_size.1, &pvm_matrix, &p2_raw);
-                let normal = trianle.get_normal().norm() * 100.0;
 
                 let tr1 = TriangleV2::new(
                     (prj_0.0 as i16, prj_0.1 as i16),
                     (prj_1.0 as i16, prj_1.1 as i16),
                     (prj_2.0 as i16, prj_2.1 as i16),
-                    normal,
+                    trianle.color,
                 );
 
                 let points_from_triangle = tr1.get_drawing_points();
@@ -159,13 +158,16 @@ fn main() -> io::Result<()> {
         for pixel in &screen_buffer {
             stdout.queue(cursor::MoveTo(pixel.0, pixel.1))?;
             if pixel.2 == 1 {
-                stdout.queue(crossterm::style::PrintStyledContent("░".blue()))?;
+                stdout.queue(crossterm::style::PrintStyledContent("▓".red()))?;
             }
             if pixel.2 == 2 {
-                stdout.queue(crossterm::style::PrintStyledContent("░".blue()))?;
+                stdout.queue(crossterm::style::PrintStyledContent("▓".green()))?;
             }
             if pixel.2 == 3 {
                 stdout.queue(crossterm::style::PrintStyledContent("▓".blue()))?;
+            }
+            if pixel.2 == 0 {
+                stdout.queue(crossterm::style::PrintStyledContent("▓".white()))?;
             }
         }
         stdout.flush()?;
@@ -184,6 +186,7 @@ struct TriangleV4 {
     point0: Vector4<f64>,
     point1: Vector4<f64>,
     point2: Vector4<f64>,
+    color: u16,
 }
 
 impl TriangleV4 {
@@ -229,11 +232,12 @@ impl TriangleV4 {
 
         answer
     }
-    fn new(p0: Vector4<f64>, p1: Vector4<f64>, p2: Vector4<f64>) -> TriangleV4 {
+    fn new(p0: Vector4<f64>, p1: Vector4<f64>, p2: Vector4<f64>, color: u16) -> TriangleV4 {
         let answer = TriangleV4 {
             point0: p0,
             point1: p1,
             point2: p2,
+            color: color,
         };
         answer
     }
@@ -258,10 +262,10 @@ impl PyramidV4 {
     }
     fn get_triangles(&self) -> Vec<TriangleV4> {
         let mut answer = Vec::new();
-        let tri0 = TriangleV4::new(self.point0, self.point1, self.point2);
-        let tri1 = TriangleV4::new(self.point3, self.point1, self.point0);
-        let tri2 = TriangleV4::new(self.point2, self.point3, self.point0);
-        let tri3 = TriangleV4::new(self.point2, self.point1, self.point3);
+        let tri0 = TriangleV4::new(self.point0, self.point1, self.point2, 0);
+        let tri1 = TriangleV4::new(self.point3, self.point1, self.point0, 1);
+        let tri2 = TriangleV4::new(self.point2, self.point3, self.point0, 2);
+        let tri3 = TriangleV4::new(self.point2, self.point1, self.point3, 3);
 
         answer.push(tri0);
         answer.push(tri1);
@@ -371,16 +375,16 @@ struct TriangleV2 {
     point0: (i16, i16),
     point1: (i16, i16),
     point2: (i16, i16),
-    normal: f64,
+    color: u16,
 }
 
 impl TriangleV2 {
-    fn new(point0: (i16, i16), point1: (i16, i16), point2: (i16, i16), normal: f64) -> TriangleV2 {
+    fn new(point0: (i16, i16), point1: (i16, i16), point2: (i16, i16), color: u16) -> TriangleV2 {
         let a = TriangleV2 {
             point0: point0,
             point1: point1,
             point2: point2,
-            normal: normal,
+            color: color,
         };
         a
     }
@@ -417,21 +421,7 @@ impl TriangleV2 {
                 let w1 = temp_vector1.cross(&base_vector1).normalize();
                 let w2 = temp_vector2.cross(&base_vector2).normalize();
                 if w2.z > 0.0 && w1.z > 0.0 && w0.z > 0.0 {
-                    let mut color = 0;
-                    let base = 0.0;
-                    let mid = 65.0;
-                    let top = 100.0;
-                    if self.normal >= base && self.normal < mid {
-                        color = 1;
-                    }
-                    if self.normal >= mid && self.normal < top {
-                        color = 2
-                    }
-                    if self.normal >= top {
-                        color = 3;
-                    }
-
-                    answer.push((x as u16, y as u16, color));
+                    answer.push((x as u16, y as u16, self.color));
                 }
             }
         }
