@@ -1,4 +1,4 @@
-use crossterm::style::Print;
+use crossterm::style::{Print, Stylize};
 use crossterm::{
     self, ExecutableCommand, QueueableCommand, cursor,
     event::{Event, KeyCode, poll, read},
@@ -8,9 +8,10 @@ use crossterm::{
         enable_raw_mode, size,
     },
 };
-use nalgebra::{self, Matrix4, Point3, Rotation3, UnitVector3, Vector3, Vector4};
+use nalgebra::{self, Matrix4, Point3, Rotation3, UnitVector3, Vector3, Vector4, min};
 use rand;
 use round_float::RoundToFraction;
+use std::cmp;
 use std::f64::consts::PI;
 use std::fmt;
 use std::io::{self, Write, stdout};
@@ -19,7 +20,6 @@ fn main() -> io::Result<()> {
     // get window size
 
     let terminal_size = size()?;
-    println!("{terminal_size:?}");
     let dim_x = terminal_size.0 as f64;
     let dim_y = terminal_size.1 as f64;
 
@@ -74,10 +74,11 @@ fn main() -> io::Result<()> {
 
     // let rotation_vector = Vector4::new(0.2, 0.2, 0.2, 0.0);
     let angle_deg = 8.55;
-    let mut screen_buffer: Vec<(u16, u16)> = Vec::new();
+    let mut screen_buffer: Vec<(u16, u16, u16)> = Vec::new();
+    let pov_vec4 = Vector4::new(pov_x, pov_y, pov_z, 0.0);
 
     'main_loop: loop {
-        if poll(std::time::Duration::from_millis(20))? {
+        if poll(std::time::Duration::from_millis(400))? {
             if let Event::Key(key_event) = read()? {
                 if key_event.code == KeyCode::Char('q') {
                     break 'main_loop;
@@ -96,7 +97,6 @@ fn main() -> io::Result<()> {
         pyramid.rotate_by_vec4_mut(rotation_vector, angle_deg);
 
         for trianle in pyramid.get_triangles() {
-            let pov_vec4 = Vector4::new(pov_x, pov_y, pov_z, 0.0);
             if trianle.is_visible(&pov_vec4) {
                 let p0_raw = trianle.point0;
                 let p1_raw = trianle.point1;
@@ -104,35 +104,49 @@ fn main() -> io::Result<()> {
                 let prj_0 = projection(terminal_size.0, terminal_size.1, &pvm_matrix, &p0_raw);
                 let prj_1 = projection(terminal_size.0, terminal_size.1, &pvm_matrix, &p1_raw);
                 let prj_2 = projection(terminal_size.0, terminal_size.1, &pvm_matrix, &p2_raw);
+                let normal = trianle.get_normal().norm() * 100.0;
 
-                let br0 = bresenham::Bresenham::new(
-                    (prj_0.0 as isize, prj_0.1 as isize),
-                    (prj_1.0 as isize, prj_1.1 as isize),
-                );
-                let br1 = bresenham::Bresenham::new(
-                    (prj_1.0 as isize, prj_1.1 as isize),
-                    (prj_2.0 as isize, prj_2.1 as isize),
-                );
-                let br2 = bresenham::Bresenham::new(
-                    (prj_2.0 as isize, prj_2.1 as isize),
-                    (prj_0.0 as isize, prj_0.1 as isize),
+                let tr1 = TriangleV2::new(
+                    (prj_0.0 as i16, prj_0.1 as i16),
+                    (prj_1.0 as i16, prj_1.1 as i16),
+                    (prj_2.0 as i16, prj_2.1 as i16),
+                    normal,
                 );
 
-                for pos in br0 {
-                    let x = pos.0 as u16;
-                    let y = pos.1 as u16;
-                    screen_buffer.push((x, y));
+                let points_from_triangle = tr1.get_drawing_points();
+                for p in points_from_triangle {
+                    screen_buffer.push(p);
                 }
-                for pos in br1 {
-                    let x = pos.0 as u16;
-                    let y = pos.1 as u16;
-                    screen_buffer.push((x, y));
-                }
-                for pos in br2 {
-                    let x = pos.0 as u16;
-                    let y = pos.1 as u16;
-                    screen_buffer.push((x, y));
-                }
+
+                // let br0 = bresenham::Bresenham::new(
+                //     (prj_0.0 as isize, prj_0.1 as isize),
+                //     (prj_1.0 as isize, prj_1.1 as isize),
+                // );
+                // let br1 = bresenham::Bresenham::new(
+                //     (prj_1.0 as isize, prj_1.1 as isize),
+                //     (prj_2.0 as isize, prj_2.1 as isize),
+                // );
+                // let br2 = bresenham::Bresenham::new(
+                //     (prj_2.0 as isize, prj_2.1 as isize),
+                //     (prj_0.0 as isize, prj_0.1 as isize),
+                // );
+                //
+                // for pos in br0 {
+                //     let x = pos.0 as u16;
+                //     let y = pos.1 as u16;
+                //     screen_buffer.push((x, y));
+                // }
+                // for pos in br1 {
+                //     let x = pos.0 as u16;
+                //     let y = pos.1 as u16;
+                //     screen_buffer.push((x, y));
+                // }
+                // for pos in br2 {
+                //     let x = pos.0 as u16;
+                //     let y = pos.1 as u16;
+                //     screen_buffer.push((x, y));
+                // }
+                //
                 // for point in trianle.get_points() {
                 //     let prj = projection(terminal_size.0, terminal_size.1, &pvm_matrix, &point);
                 //
@@ -144,7 +158,15 @@ fn main() -> io::Result<()> {
         stdout.queue(Clear(ClearType::All))?;
         for pixel in &screen_buffer {
             stdout.queue(cursor::MoveTo(pixel.0, pixel.1))?;
-            stdout.queue(Print("█"))?;
+            if pixel.2 == 1 {
+                stdout.queue(crossterm::style::PrintStyledContent("░".blue()))?;
+            }
+            if pixel.2 == 2 {
+                stdout.queue(crossterm::style::PrintStyledContent("░".blue()))?;
+            }
+            if pixel.2 == 3 {
+                stdout.queue(crossterm::style::PrintStyledContent("▓".blue()))?;
+            }
         }
         stdout.flush()?;
     }
@@ -313,6 +335,21 @@ impl fmt::Display for PyramidV4 {
     }
 }
 
+impl fmt::Display for TriangleV2 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "TriangleV2({} {},{} {},{} {})",
+            self.point0.0,
+            self.point0.1,
+            self.point1.0,
+            self.point1.1,
+            self.point2.0,
+            self.point2.1
+        )
+    }
+}
+
 fn projection(
     dim_x: u16,
     dim_y: u16,
@@ -328,4 +365,77 @@ fn projection(
     let y_raw = (dim_y as f64 / 2.0) * (1.0 + point_wo_w.y);
 
     (x_raw as u16, y_raw as u16)
+}
+
+struct TriangleV2 {
+    point0: (i16, i16),
+    point1: (i16, i16),
+    point2: (i16, i16),
+    normal: f64,
+}
+
+impl TriangleV2 {
+    fn new(point0: (i16, i16), point1: (i16, i16), point2: (i16, i16), normal: f64) -> TriangleV2 {
+        let a = TriangleV2 {
+            point0: point0,
+            point1: point1,
+            point2: point2,
+            normal: normal,
+        };
+        a
+    }
+    fn get_drawing_points(&self) -> Vec<(u16, u16, u16)> {
+        let mut answer: Vec<(u16, u16, u16)> = Vec::new();
+        let min_x = cmp::min(cmp::min(self.point0.0, self.point1.0), self.point2.0);
+        let max_x = cmp::max(cmp::max(self.point0.0, self.point1.0), self.point2.0);
+        let min_y = cmp::min(cmp::min(self.point0.1, self.point1.1), self.point2.1);
+        let max_y = cmp::max(cmp::max(self.point0.1, self.point1.1), self.point2.1);
+        let base_vector0 = Vector3::new(
+            (self.point1.0 - self.point0.0) as f64,
+            (self.point1.1 - self.point0.1) as f64,
+            0.0,
+        );
+        let base_vector1 = Vector3::new(
+            (self.point2.0 - self.point1.0) as f64,
+            (self.point2.1 - self.point1.1) as f64,
+            0.0,
+        );
+        let base_vector2 = Vector3::new(
+            (self.point0.0 - self.point2.0) as f64,
+            (self.point0.1 - self.point2.1) as f64,
+            0.0,
+        );
+        for x in min_x..max_x + 1 {
+            for y in min_y..max_y + 1 {
+                let temp_vector0 =
+                    Vector3::new((x - self.point0.0) as f64, (y - self.point0.1) as f64, 0.0);
+                let temp_vector1 =
+                    Vector3::new((x - self.point1.0) as f64, (y - self.point1.1) as f64, 0.0);
+                let temp_vector2 =
+                    Vector3::new((x - self.point2.0) as f64, (y - self.point2.1) as f64, 0.0);
+                let w0 = temp_vector0.cross(&base_vector0).normalize();
+                let w1 = temp_vector1.cross(&base_vector1).normalize();
+                let w2 = temp_vector2.cross(&base_vector2).normalize();
+                if w2.z > 0.0 && w1.z > 0.0 && w0.z > 0.0 {
+                    let mut color = 0;
+                    let base = 0.0;
+                    let mid = 65.0;
+                    let top = 100.0;
+                    if self.normal >= base && self.normal < mid {
+                        color = 1;
+                    }
+                    if self.normal >= mid && self.normal < top {
+                        color = 2
+                    }
+                    if self.normal >= top {
+                        color = 3;
+                    }
+
+                    answer.push((x as u16, y as u16, color));
+                }
+            }
+        }
+
+        answer
+    }
 }
