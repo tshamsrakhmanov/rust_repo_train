@@ -54,6 +54,7 @@ fn main() -> io::Result<()> {
 
     let pvm = project_matrix * view_matrix * model_matrix;
 
+    // Points declaration for PyramidV4
     // let point0 = Vector4::new(20.0, 0.0, -20.0, 1.0);
     // let point1 = Vector4::new(-20.0, 0.0, -20.0, 1.0);
     // let point2 = Vector4::new(0.0, -20.0, 20.0, 1.0);
@@ -61,14 +62,6 @@ fn main() -> io::Result<()> {
     // let mut pyr0 = PyramidV4::new(point0, point1, point2, point3);
 
     let edge = 20.0;
-    // let point0 = Vector4::new(0.0, 0.0, 0.0, 1.0);
-    // let point1 = Vector4::new(0.0, edge, 0.0, 1.0);
-    // let point2 = Vector4::new(edge, edge, 0.0, 1.0);
-    // let point3 = Vector4::new(edge, 0.0, 0.0, 1.0);
-    // let point4 = Vector4::new(0.0, 0.0, edge, 1.0);
-    // let point5 = Vector4::new(0.0, edge, edge, 1.0);
-    // let point6 = Vector4::new(edge, edge, edge, 1.0);
-    // let point7 = Vector4::new(edge, 0.0, edge, 1.0);
     let point0 = Vector4::new(-edge, -edge, -edge, 1.0);
     let point1 = Vector4::new(-edge, edge, -edge, 1.0);
     let point2 = Vector4::new(edge, edge, -edge, 1.0);
@@ -78,7 +71,7 @@ fn main() -> io::Result<()> {
     let point6 = Vector4::new(edge, edge, edge, 1.0);
     let point7 = Vector4::new(edge, -edge, edge, 1.0);
 
-    let mut c0 = CubeV4::new(
+    let mut c0 = CubeV4::new_by_points(
         point0, point1, point2, point3, point4, point5, point6, point7,
     );
 
@@ -92,16 +85,64 @@ fn main() -> io::Result<()> {
 
     let scale_vec_up = Vector4::new(1.2, 1.2, 1.2, 0.0);
     let scale_vec_down = Vector4::new(0.8, 0.8, 0.8, 0.0);
+    let rotation_vec_x = Vector4::new(1.0, 0.0, 0.0, 0.0);
+    let rotation_vec_y = Vector4::new(0.0, 1.0, 0.0, 0.0);
+    let rotation_vec_z = Vector4::new(0.0, 0.0, 1.0, 0.0);
+    let mut rotation_vec = rotation_vec_x;
 
+    let mut rasterization_colored = true;
     enable_raw_mode()?;
     'main_loop: loop {
+        // Randomized rotation vector
         // let mut rotation_vec = Vector4::new(
         //     rand::random_range(0.0..0.1),
         //     rand::random_range(0.0..0.1),
         //     rand::random_range(0.9..1.0),
         //     0.0,
         // );
-        let mut rotation_vec = Vector4::new(0.0, 0.0, 1.0, 0.0);
+
+        execute!(stdout, cursor::MoveTo(1, 1))?;
+        execute!(stdout, style::PrintStyledContent("q - Exit".magenta()))?;
+        execute!(stdout, cursor::MoveTo(1, 2))?;
+        execute!(
+            stdout,
+            style::PrintStyledContent("w - change rasterization_type".magenta())
+        )?;
+        execute!(stdout, cursor::MoveTo(1, 3))?;
+        execute!(
+            stdout,
+            style::PrintStyledContent("e - scale down model".magenta())
+        )?;
+        execute!(stdout, cursor::MoveTo(1, 4))?;
+        execute!(
+            stdout,
+            style::PrintStyledContent("r - scale up model".magenta())
+        )?;
+        execute!(stdout, cursor::MoveTo(1, 5))?;
+        execute!(
+            stdout,
+            style::PrintStyledContent("z - rotation by X-axis".magenta())
+        )?;
+        execute!(stdout, cursor::MoveTo(1, 6))?;
+        execute!(
+            stdout,
+            style::PrintStyledContent("x - rotation by Y-axis".magenta())
+        )?;
+        execute!(stdout, cursor::MoveTo(1, 7))?;
+        execute!(
+            stdout,
+            style::PrintStyledContent("c - rotation by Z-axis".magenta())
+        )?;
+        execute!(stdout, cursor::MoveTo(1, 8))?;
+        execute!(stdout, style::PrintStyledContent("- - speed up".magenta()))?;
+        execute!(stdout, cursor::MoveTo(1, 9))?;
+        execute!(stdout, style::PrintStyledContent("= - slow down".magenta()))?;
+        execute!(stdout, cursor::MoveTo(1, 10))?;
+        execute!(
+            stdout,
+            style::PrintStyledContent("t - all white rasterization".magenta())
+        )?;
+
         stdout.queue(Clear(ClearType::All))?;
         if poll(Duration::from_millis(pause))? {
             if let Event::Key(event) = read()? {
@@ -111,7 +152,6 @@ fn main() -> io::Result<()> {
                 if event.code == KeyCode::Char('w') {
                     rasterization_type = !rasterization_type;
                 }
-
                 if event.code == KeyCode::Char('=') {
                     pause += 10;
                 }
@@ -124,6 +164,18 @@ fn main() -> io::Result<()> {
                 if event.code == KeyCode::Char('r') {
                     c0.scale_mut(scale_vec_up);
                 }
+                if event.code == KeyCode::Char('z') {
+                    rotation_vec = rotation_vec_x;
+                }
+                if event.code == KeyCode::Char('x') {
+                    rotation_vec = rotation_vec_y;
+                }
+                if event.code == KeyCode::Char('c') {
+                    rotation_vec = rotation_vec_z;
+                }
+                if event.code == KeyCode::Char('t') {
+                    rasterization_colored = !rasterization_colored;
+                }
             }
         }
 
@@ -131,19 +183,27 @@ fn main() -> io::Result<()> {
             let x = pos.x;
             let y = pos.y;
             execute!(stdout, cursor::MoveTo(x, y))?;
-            if pos.color == 0 {
-                execute!(stdout, style::PrintStyledContent("█".magenta()));
-            }
-            if pos.color == 1 {
-                execute!(stdout, style::PrintStyledContent("█".yellow()));
-            }
-            if pos.color == 2 {
-                execute!(stdout, style::PrintStyledContent("█".red()));
-            }
-            if pos.color == 3 {
-                execute!(stdout, style::PrintStyledContent("█".blue()));
+            if rasterization_colored {
+                if pos.color == 0 {
+                    execute!(stdout, style::PrintStyledContent("█".magenta()))?;
+                }
+                if pos.color == 1 {
+                    execute!(stdout, style::PrintStyledContent("█".yellow()))?;
+                }
+                if pos.color == 2 {
+                    execute!(stdout, style::PrintStyledContent("█".red()))?;
+                }
+                if pos.color == 3 {
+                    execute!(stdout, style::PrintStyledContent("█".blue()))?;
+                }
+                if pos.color == 4 {
+                    execute!(stdout, style::PrintStyledContent("█".cyan()))?;
+                }
+            } else {
+                execute!(stdout, style::PrintStyledContent("█".white()))?;
             }
         }
+
         stdout.flush()?;
 
         // pyr0.rotate_by_axis_mut(10.0, rotation_vec);
@@ -458,7 +518,7 @@ struct CubeV4 {
 }
 
 impl CubeV4 {
-    fn new(
+    fn new_by_points(
         point0: Vector4<f64>,
         point1: Vector4<f64>,
         point2: Vector4<f64>,
