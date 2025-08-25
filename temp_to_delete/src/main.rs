@@ -1,7 +1,10 @@
+use rand;
+
 use std::{
     f64::consts::PI,
     io::{Write, stdout},
     time::Duration,
+    vec,
 };
 
 use bresenham::Bresenham as br;
@@ -9,13 +12,13 @@ use crossterm::{
     QueueableCommand, cursor,
     event::{Event, KeyCode, poll, read},
     execute,
-    style::{self, Print, Stylize},
+    style::{self, Stylize},
     terminal::{
         self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
         enable_raw_mode,
     },
 };
-use nalgebra::{Matrix4, Point3, Vector3, Vector4};
+use nalgebra::{Matrix4, Point3, Scale4, UnitVector3, Vector3, Vector4};
 use std::cmp as comp;
 use std::io;
 
@@ -37,7 +40,7 @@ fn main() -> io::Result<()> {
 
     let view_x: f64 = 10.0;
     let view_y: f64 = 10.0;
-    let view_z: f64 = 10.0;
+    let view_z: f64 = 5.0;
 
     let visibility_vector = Vector4::new(view_x, view_y, view_z, 0.0);
 
@@ -51,25 +54,75 @@ fn main() -> io::Result<()> {
 
     let pvm = project_matrix * view_matrix * model_matrix;
 
-    let point0 = Vector4::new(20.0, 0.0, -20.0, 1.0);
-    let point1 = Vector4::new(-20.0, 0.0, -20.0, 1.0);
-    let point2 = Vector4::new(0.0, -20.0, 20.0, 1.0);
-    let point3 = Vector4::new(0.0, 20.0, 20.0, 1.0);
-    let mut pyr0 = PyramidV4::new(point0, point1, point2, point3);
+    // let point0 = Vector4::new(20.0, 0.0, -20.0, 1.0);
+    // let point1 = Vector4::new(-20.0, 0.0, -20.0, 1.0);
+    // let point2 = Vector4::new(0.0, -20.0, 20.0, 1.0);
+    // let point3 = Vector4::new(0.0, 20.0, 20.0, 1.0);
+    // let mut pyr0 = PyramidV4::new(point0, point1, point2, point3);
+
+    let edge = 20.0;
+    // let point0 = Vector4::new(0.0, 0.0, 0.0, 1.0);
+    // let point1 = Vector4::new(0.0, edge, 0.0, 1.0);
+    // let point2 = Vector4::new(edge, edge, 0.0, 1.0);
+    // let point3 = Vector4::new(edge, 0.0, 0.0, 1.0);
+    // let point4 = Vector4::new(0.0, 0.0, edge, 1.0);
+    // let point5 = Vector4::new(0.0, edge, edge, 1.0);
+    // let point6 = Vector4::new(edge, edge, edge, 1.0);
+    // let point7 = Vector4::new(edge, 0.0, edge, 1.0);
+    let point0 = Vector4::new(-edge, -edge, -edge, 1.0);
+    let point1 = Vector4::new(-edge, edge, -edge, 1.0);
+    let point2 = Vector4::new(edge, edge, -edge, 1.0);
+    let point3 = Vector4::new(edge, -edge, -edge, 1.0);
+    let point4 = Vector4::new(-edge, -edge, edge, 1.0);
+    let point5 = Vector4::new(-edge, edge, edge, 1.0);
+    let point6 = Vector4::new(edge, edge, edge, 1.0);
+    let point7 = Vector4::new(edge, -edge, edge, 1.0);
+
+    let mut c0 = CubeV4::new(
+        point0, point1, point2, point3, point4, point5, point6, point7,
+    );
 
     execute!(stdout, cursor::Hide)?;
     execute!(stdout, EnterAlternateScreen)?;
     execute!(stdout, terminal::Clear(terminal::ClearType::All))?;
 
     let mut screen_buffer: Vec<Pixel> = Vec::new();
+    let mut rasterization_type = false;
+    let mut pause = 50;
+
+    let scale_vec_up = Vector4::new(1.2, 1.2, 1.2, 0.0);
+    let scale_vec_down = Vector4::new(0.8, 0.8, 0.8, 0.0);
 
     enable_raw_mode()?;
     'main_loop: loop {
+        // let mut rotation_vec = Vector4::new(
+        //     rand::random_range(0.0..0.1),
+        //     rand::random_range(0.0..0.1),
+        //     rand::random_range(0.9..1.0),
+        //     0.0,
+        // );
+        let mut rotation_vec = Vector4::new(0.0, 0.0, 1.0, 0.0);
         stdout.queue(Clear(ClearType::All))?;
-        if poll(Duration::from_millis(50))? {
+        if poll(Duration::from_millis(pause))? {
             if let Event::Key(event) = read()? {
                 if event.code == KeyCode::Char('q') {
                     break 'main_loop;
+                }
+                if event.code == KeyCode::Char('w') {
+                    rasterization_type = !rasterization_type;
+                }
+
+                if event.code == KeyCode::Char('=') {
+                    pause += 10;
+                }
+                if event.code == KeyCode::Char('-') {
+                    pause -= 10;
+                }
+                if event.code == KeyCode::Char('e') {
+                    c0.scale_mut(scale_vec_down);
+                }
+                if event.code == KeyCode::Char('r') {
+                    c0.scale_mut(scale_vec_up);
                 }
             }
         }
@@ -93,16 +146,39 @@ fn main() -> io::Result<()> {
         }
         stdout.flush()?;
 
-        pyr0.rotate_by_z_axis_mut(10.0);
+        // pyr0.rotate_by_axis_mut(10.0, rotation_vec);
+        c0.rotate_by_axis_mut(10.0, rotation_vec);
 
         screen_buffer.clear();
-        for pos in pyr0.get_triangles() {
+        // for pos in pyr0.get_triangles() {
+        //     let visibility = pos.is_visible(&visibility_vector);
+        //     if visibility {
+        //         let tr = pos.project_to_screen(pvm, dim_x, dim_y);
+        //
+        //         if rasterization_type {
+        //             for pos in tr.rasterize_to_fill() {
+        //                 screen_buffer.push(pos);
+        //             }
+        //         } else {
+        //             for pos in tr.resterize_to_lines() {
+        //                 screen_buffer.push(pos);
+        //             }
+        //         }
+        //     }
+        // }
+        for pos in c0.get_triangles() {
             let visibility = pos.is_visible(&visibility_vector);
             if visibility {
                 let tr = pos.project_to_screen(pvm, dim_x, dim_y);
 
-                for pos in tr.rasterize_to_fill() {
-                    screen_buffer.push(pos);
+                if rasterization_type {
+                    for pos in tr.rasterize_to_fill() {
+                        screen_buffer.push(pos);
+                    }
+                } else {
+                    for pos in tr.resterize_to_lines() {
+                        screen_buffer.push(pos);
+                    }
                 }
             }
         }
@@ -152,8 +228,8 @@ impl TriangleV3 {
         };
         answer
     }
-    fn resterize_to_lines(&self) -> Vec<(u16, u16)> {
-        let mut answer: Vec<(u16, u16)> = Vec::new();
+    fn resterize_to_lines(&self) -> Vec<Pixel> {
+        let mut answer: Vec<Pixel> = Vec::new();
 
         let p0 = (self.point0.x as isize, self.point0.y as isize);
         let p1 = (self.point1.x as isize, self.point1.y as isize);
@@ -163,15 +239,27 @@ impl TriangleV3 {
         let l3 = br::new(p0, p2);
 
         for pos in l1 {
-            answer.push((pos.0 as u16, pos.1 as u16));
+            answer.push(Pixel {
+                x: pos.0 as u16,
+                y: pos.1 as u16,
+                color: self.color,
+            });
         }
 
         for pos in l2 {
-            answer.push((pos.0 as u16, pos.1 as u16));
+            answer.push(Pixel {
+                x: pos.0 as u16,
+                y: pos.1 as u16,
+                color: self.color,
+            });
         }
 
         for pos in l3 {
-            answer.push((pos.0 as u16, pos.1 as u16));
+            answer.push(Pixel {
+                x: pos.0 as u16,
+                y: pos.1 as u16,
+                color: self.color,
+            });
         }
         answer
     }
@@ -325,18 +413,26 @@ impl PyramidV4 {
         };
         answer
     }
-    fn rotate_by_z_axis_mut(&mut self, degrees: f64) {
-        self.point0 = rot_by_z(self.point0, degrees);
-        self.point1 = rot_by_z(self.point1, degrees);
-        self.point2 = rot_by_z(self.point2, degrees);
-        self.point3 = rot_by_z(self.point3, degrees);
+    fn rotate_by_axis_mut(&mut self, degrees: f64, vector: Vector4<f64>) {
+        self.point0 = rot_by_z(self.point0, vector, degrees);
+        self.point1 = rot_by_z(self.point1, vector, degrees);
+        self.point2 = rot_by_z(self.point2, vector, degrees);
+        self.point3 = rot_by_z(self.point3, vector, degrees);
     }
 }
 
-fn rot_by_z(point: Vector4<f64>, degrees: f64) -> Vector4<f64> {
-    let rotation_axis = Matrix4::from_axis_angle(&Vector3::z_axis(), deg_to_rad(degrees));
+fn rot_by_z(point: Vector4<f64>, vector: Vector4<f64>, degrees: f64) -> Vector4<f64> {
+    let v3_vec = Vector3::new(vector.x, vector.y, vector.z);
+    let v3_vec_norm = v3_vec.normalize();
+    let unit = UnitVector3::from_ref_unchecked(&v3_vec_norm);
+    let rotation_axis = Matrix4::from_axis_angle(&unit, deg_to_rad(degrees));
     let rot = rotation_axis * point;
     rot
+}
+fn scale_by_vec(point: Vector4<f64>, vector: &Vector4<f64>) -> Vector4<f64> {
+    let scale = Scale4::new(vector.x, vector.y, vector.z, vector.w);
+    let v = scale * point;
+    v
 }
 
 fn deg_to_rad(deg: f64) -> f64 {
@@ -348,4 +444,108 @@ struct Pixel {
     x: u16,
     y: u16,
     color: u16,
+}
+
+struct CubeV4 {
+    point0: Vector4<f64>,
+    point1: Vector4<f64>,
+    point2: Vector4<f64>,
+    point3: Vector4<f64>,
+    point4: Vector4<f64>,
+    point5: Vector4<f64>,
+    point6: Vector4<f64>,
+    point7: Vector4<f64>,
+}
+
+impl CubeV4 {
+    fn new(
+        point0: Vector4<f64>,
+        point1: Vector4<f64>,
+        point2: Vector4<f64>,
+        point3: Vector4<f64>,
+        point4: Vector4<f64>,
+        point5: Vector4<f64>,
+        point6: Vector4<f64>,
+        point7: Vector4<f64>,
+    ) -> CubeV4 {
+        let c = CubeV4 {
+            point0: point0,
+            point1: point1,
+            point2: point2,
+            point3: point3,
+            point4: point4,
+            point5: point5,
+            point6: point6,
+            point7: point7,
+        };
+        c
+    }
+    fn get_triangles(&self) -> Vec<TriangleV4> {
+        let mut answer: Vec<TriangleV4> = Vec::new();
+        //bot
+        let t0 = TriangleV4::new(self.point2, self.point0, self.point1, 0);
+        let t1 = TriangleV4::new(self.point2, self.point3, self.point0, 0);
+
+        //top
+        let t2 = TriangleV4::new(self.point5, self.point4, self.point6, 1);
+        let t3 = TriangleV4::new(self.point7, self.point6, self.point4, 1);
+
+        //right
+        let t4 = TriangleV4::new(self.point2, self.point1, self.point5, 2);
+        let t5 = TriangleV4::new(self.point2, self.point5, self.point6, 2);
+
+        //left
+        let t6 = TriangleV4::new(self.point3, self.point7, self.point4, 3);
+        let t7 = TriangleV4::new(self.point3, self.point4, self.point0, 3);
+
+        //front
+        let t8 = TriangleV4::new(self.point2, self.point6, self.point7, 0);
+        let t9 = TriangleV4::new(self.point2, self.point7, self.point3, 0);
+
+        //back
+        let t10 = TriangleV4::new(self.point1, self.point4, self.point5, 1);
+        let t11 = TriangleV4::new(self.point1, self.point0, self.point4, 1);
+
+        answer.push(t0);
+        answer.push(t1);
+
+        answer.push(t2);
+        answer.push(t3);
+
+        answer.push(t4);
+        answer.push(t5);
+
+        answer.push(t6);
+        answer.push(t7);
+
+        answer.push(t8);
+        answer.push(t9);
+
+        answer.push(t10);
+        answer.push(t11);
+
+        answer
+    }
+
+    fn rotate_by_axis_mut(&mut self, degrees: f64, vector: Vector4<f64>) {
+        self.point0 = rot_by_z(self.point0, vector, degrees);
+        self.point1 = rot_by_z(self.point1, vector, degrees);
+        self.point2 = rot_by_z(self.point2, vector, degrees);
+        self.point3 = rot_by_z(self.point3, vector, degrees);
+        self.point4 = rot_by_z(self.point4, vector, degrees);
+        self.point5 = rot_by_z(self.point5, vector, degrees);
+        self.point6 = rot_by_z(self.point6, vector, degrees);
+        self.point7 = rot_by_z(self.point7, vector, degrees);
+    }
+
+    fn scale_mut(&mut self, vector: Vector4<f64>) {
+        self.point0 = scale_by_vec(self.point0, &vector);
+        self.point1 = scale_by_vec(self.point1, &vector);
+        self.point2 = scale_by_vec(self.point2, &vector);
+        self.point3 = scale_by_vec(self.point3, &vector);
+        self.point4 = scale_by_vec(self.point4, &vector);
+        self.point5 = scale_by_vec(self.point5, &vector);
+        self.point6 = scale_by_vec(self.point6, &vector);
+        self.point7 = scale_by_vec(self.point7, &vector);
+    }
 }
