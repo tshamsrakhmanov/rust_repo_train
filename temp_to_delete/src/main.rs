@@ -1,10 +1,7 @@
-use rand;
-
 use std::{
     f64::consts::PI,
     io::{Write, stdout},
     time::Duration,
-    vec,
 };
 
 use bresenham::Bresenham as br;
