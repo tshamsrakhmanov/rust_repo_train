@@ -1,3 +1,4 @@
+use core::f64;
 use std::{
     f64::consts::PI,
     io::{Write, stdout},
@@ -11,8 +12,8 @@ use crossterm::{
     execute,
     style::{self, Stylize},
     terminal::{
-        self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
-        enable_raw_mode,
+        self, BeginSynchronizedUpdate, Clear, ClearType, EndSynchronizedUpdate,
+        EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
     },
 };
 use nalgebra::{Matrix4, Point3, Scale4, UnitVector3, Vector3, Vector4};
@@ -74,6 +75,7 @@ fn main() -> io::Result<()> {
 
     execute!(stdout, cursor::Hide)?;
     execute!(stdout, EnterAlternateScreen)?;
+    // execute!(stdout, BeginSynchronizedUpdate)?;
     execute!(stdout, terminal::Clear(terminal::ClearType::All))?;
 
     let mut screen_buffer: Vec<Pixel> = Vec::new();
@@ -143,7 +145,6 @@ fn main() -> io::Result<()> {
             style::PrintStyledContent("t - all white rasterization".magenta())
         )?;
 
-        stdout.queue(Clear(ClearType::All))?;
         if poll(Duration::from_millis(pause))? {
             if let Event::Key(event) = read()? {
                 if event.code == KeyCode::Char('q') {
@@ -188,9 +189,12 @@ fn main() -> io::Result<()> {
             }
         }
 
+        stdout.queue(Clear(ClearType::All))?;
+
         for pos in &screen_buffer {
             let x = pos.x;
             let y = pos.y;
+
             execute!(stdout, cursor::MoveTo(dim_x - x, y))?;
             if rasterization_colored {
                 if pos.color == 0 {
@@ -257,8 +261,10 @@ fn main() -> io::Result<()> {
     }
 
     disable_raw_mode()?;
-    execute!(io::stdout(), cursor::Show)?;
-    execute!(io::stdout(), LeaveAlternateScreen)
+    execute!(stdout, cursor::Show)?;
+    // execute!(io::stdout(), EndSynchronizedUpdate)?;
+    // Ok(())
+    execute!(stdout, LeaveAlternateScreen)
 }
 
 #[derive(Debug)]
@@ -337,12 +343,13 @@ impl TriangleV3 {
     }
     fn rasterize_to_fill(&self) -> Vec<Pixel> {
         let mut answer: Vec<Pixel> = Vec::new();
-        let p0_x_u16 = self.point0.x as u16;
-        let p1_x_u16 = self.point1.x as u16;
-        let p2_x_u16 = self.point2.x as u16;
-        let p0_y_u16 = self.point0.y as u16;
-        let p1_y_u16 = self.point1.y as u16;
-        let p2_y_u16 = self.point2.y as u16;
+        let p0_x_u16 = f64_to_u16_rounded(self.point0.x);
+        let p1_x_u16 = f64_to_u16_rounded(self.point1.x);
+        let p2_x_u16 = f64_to_u16_rounded(self.point2.x);
+        let p0_y_u16 = f64_to_u16_rounded(self.point0.y);
+        let p1_y_u16 = f64_to_u16_rounded(self.point1.y);
+        let p2_y_u16 = f64_to_u16_rounded(self.point2.y);
+
         let min_x = comp::min(comp::min(p0_x_u16, p1_x_u16), p2_x_u16);
         let max_x = comp::max(comp::max(p0_x_u16, p1_x_u16), p2_x_u16);
         let min_y = comp::min(comp::min(p0_y_u16, p1_y_u16), p2_y_u16);
@@ -648,4 +655,17 @@ impl CubeV4 {
         self.point6 = scale_by_vec(self.point6, &vector);
         self.point7 = scale_by_vec(self.point7, &vector);
     }
+}
+
+fn f64_to_u16_rounded(f64_var: f64) -> u16 {
+    let mut answer: u16 = 0;
+
+    if f64_var < 0.0 || f64_var.is_infinite() || f64_var.is_nan() {
+        answer = 0;
+    } else {
+        let temp_answer = f64_var.round();
+        answer = temp_answer as u16;
+    }
+
+    answer as u16
 }
