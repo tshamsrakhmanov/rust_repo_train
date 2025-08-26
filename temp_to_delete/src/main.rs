@@ -365,6 +365,9 @@ impl TriangleV3 {
             self.point0.y - self.point2.y,
             self.point0.z - self.point2.z,
         );
+        let tl_factor_0 = is_top_left(&edge_1, &edge_0);
+        let tl_factor_1 = is_top_left(&edge_2, &edge_1);
+        let tl_factor_2 = is_top_left(&edge_0, &edge_2);
         for x in min_x..max_x {
             for y in min_y..max_y {
                 let x_f64 = x as f64;
@@ -372,10 +375,22 @@ impl TriangleV3 {
                 let temp_vec_0 = Vector3::new(x_f64 - self.point0.x, y_f64 - self.point0.y, 1.0);
                 let temp_vec_1 = Vector3::new(x_f64 - self.point1.x, y_f64 - self.point1.y, 1.0);
                 let temp_vec_2 = Vector3::new(x_f64 - self.point2.x, y_f64 - self.point2.y, 1.0);
-                let w0 = edge_0.cross(&temp_vec_0);
-                let w1 = edge_1.cross(&temp_vec_1);
-                let w2 = edge_2.cross(&temp_vec_2);
-                if w0.z > 0.0 && w1.z > 0.0 && w2.z > 0.0 {
+                let w0_raw = edge_0.cross(&temp_vec_0);
+                let w1_raw = edge_1.cross(&temp_vec_1);
+                let w2_raw = edge_2.cross(&temp_vec_2);
+                let mut w0 = w0_raw.z;
+                let mut w1 = w1_raw.z;
+                let mut w2 = w2_raw.z;
+                if !tl_factor_0 {
+                    w0 = w0_raw.z - 1.0;
+                }
+                if !tl_factor_1 {
+                    w1 = w1_raw.z - 1.0;
+                }
+                if !tl_factor_2 {
+                    w2 = w2_raw.z - 1.0;
+                }
+                if w0 > 0.0 && w1 > 0.0 && w2 > 0.0 {
                     answer.push(Pixel {
                         x: x,
                         y: y,
@@ -387,6 +402,19 @@ impl TriangleV3 {
 
         answer
     }
+}
+
+fn is_top_left(vector0: &Vector3<f64>, vector1: &Vector3<f64>) -> bool {
+    let edge = Vector3::new(vector1.x - vector0.x, vector1.y - vector0.y, 0.0);
+    let mut is_top = true;
+    if edge.y == 0.0 && edge.x > 0.0 {
+        is_top = false;
+    }
+    let mut is_left = true;
+    if edge.y < 0.0 {
+        is_left = false;
+    }
+    is_top || is_left
 }
 
 impl TriangleV4 {
