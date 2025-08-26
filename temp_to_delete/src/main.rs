@@ -83,8 +83,11 @@ fn main() -> io::Result<()> {
     let scale_vec_up = Vector4::new(1.2, 1.2, 1.2, 0.0);
     let scale_vec_down = Vector4::new(0.8, 0.8, 0.8, 0.0);
     let rotation_vec_x = Vector4::new(1.0, 0.0, 0.0, 0.0);
+    let rotation_vec_x_reverse = Vector4::new(-1.0, 0.0, 0.0, 0.0);
     let rotation_vec_y = Vector4::new(0.0, 1.0, 0.0, 0.0);
+    let rotation_vec_y_reverse = Vector4::new(0.0, -1.0, 0.0, 0.0);
     let rotation_vec_z = Vector4::new(0.0, 0.0, 1.0, 0.0);
+    let rotation_vec_z_reverse = Vector4::new(0.0, 0.0, -1.0, 0.0);
     let mut rotation_vec = rotation_vec_x;
 
     let mut rasterization_colored = true;
@@ -118,17 +121,17 @@ fn main() -> io::Result<()> {
         execute!(stdout, cursor::MoveTo(1, 5))?;
         execute!(
             stdout,
-            style::PrintStyledContent("z - rotation by X-axis".magenta())
+            style::PrintStyledContent("z - rotation by X-axis (Z for anti-clockwise)".magenta())
         )?;
         execute!(stdout, cursor::MoveTo(1, 6))?;
         execute!(
             stdout,
-            style::PrintStyledContent("x - rotation by Y-axis".magenta())
+            style::PrintStyledContent("x - rotation by Y-axis (X for anti-clockwise)".magenta())
         )?;
         execute!(stdout, cursor::MoveTo(1, 7))?;
         execute!(
             stdout,
-            style::PrintStyledContent("c - rotation by Z-axis".magenta())
+            style::PrintStyledContent("c - rotation by Z-axis (C for anti-clockwise)".magenta())
         )?;
         execute!(stdout, cursor::MoveTo(1, 8))?;
         execute!(stdout, style::PrintStyledContent("- - speed up".magenta()))?;
@@ -173,13 +176,22 @@ fn main() -> io::Result<()> {
                 if event.code == KeyCode::Char('t') {
                     rasterization_colored = !rasterization_colored;
                 }
+                if event.code == KeyCode::Char('Z') {
+                    rotation_vec = rotation_vec_x_reverse;
+                }
+                if event.code == KeyCode::Char('X') {
+                    rotation_vec = rotation_vec_y_reverse;
+                }
+                if event.code == KeyCode::Char('C') {
+                    rotation_vec = rotation_vec_z_reverse;
+                }
             }
         }
 
         for pos in &screen_buffer {
             let x = pos.x;
             let y = pos.y;
-            execute!(stdout, cursor::MoveTo(x, y))?;
+            execute!(stdout, cursor::MoveTo(dim_x - x, y))?;
             if rasterization_colored {
                 if pos.color == 0 {
                     execute!(stdout, style::PrintStyledContent("█".magenta()))?;
@@ -195,6 +207,9 @@ fn main() -> io::Result<()> {
                 }
                 if pos.color == 4 {
                     execute!(stdout, style::PrintStyledContent("█".cyan()))?;
+                }
+                if pos.color == 5 {
+                    execute!(stdout, style::PrintStyledContent("█".green()))?;
                 }
             } else {
                 execute!(stdout, style::PrintStyledContent("█".white()))?;
@@ -556,12 +571,12 @@ impl CubeV4 {
         let t7 = TriangleV4::new(self.point3, self.point4, self.point0, 3);
 
         //front
-        let t8 = TriangleV4::new(self.point2, self.point6, self.point7, 0);
-        let t9 = TriangleV4::new(self.point2, self.point7, self.point3, 0);
+        let t8 = TriangleV4::new(self.point2, self.point6, self.point7, 4);
+        let t9 = TriangleV4::new(self.point2, self.point7, self.point3, 4);
 
         //back
-        let t10 = TriangleV4::new(self.point1, self.point4, self.point5, 1);
-        let t11 = TriangleV4::new(self.point1, self.point0, self.point4, 1);
+        let t10 = TriangleV4::new(self.point1, self.point4, self.point5, 5);
+        let t11 = TriangleV4::new(self.point1, self.point0, self.point4, 5);
 
         answer.push(t0);
         answer.push(t1);
