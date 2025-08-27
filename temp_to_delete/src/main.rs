@@ -1,12 +1,5 @@
-use core::f64;
-use std::{
-    collections::{HashMap, HashSet},
-    f64::consts::PI,
-    io::{Stdout, Write, stdout},
-    time::Duration,
-};
-
 use bresenham::Bresenham as br;
+use core::f64;
 use crossterm::{
     cursor,
     event::{Event, KeyCode, poll, read},
@@ -19,6 +12,12 @@ use crossterm::{
 use nalgebra::{Matrix4, Point3, Scale4, UnitVector3, Vector3, Vector4};
 use std::cmp as comp;
 use std::io;
+use std::{
+    collections::{HashMap, HashSet},
+    f64::consts::PI,
+    io::{Stdout, Write, stdout},
+    time::Duration,
+};
 
 fn main() -> io::Result<()> {
     let mut stdout = stdout();
@@ -29,8 +28,8 @@ fn main() -> io::Result<()> {
 
     let left = -(dim_x as f64) / 2.0;
     let right = (dim_x as f64) / 2.0;
-    let bottom = -(dim_y as f64) / 2.0;
-    let top = (dim_y as f64) / 2.0;
+    let bottom = -(dim_y as f64) / 1.0;
+    let top = (dim_y as f64) / 1.0;
     let znear = 0.0;
     let zfar = 100.0;
 
@@ -591,7 +590,7 @@ fn execute_write_with_color(
 }
 
 fn generate_frame_buffer_from_model(
-    c0: &CubeV4,
+    cube: &CubeV4,
     visibility_vector: &Vector4<f64>,
     pvm: Matrix4<f64>,
     dim_x: u16,
@@ -599,10 +598,10 @@ fn generate_frame_buffer_from_model(
     rasterization_type: bool,
 ) -> HashMap<(u16, u16), u16> {
     let mut temp_buff: HashMap<(u16, u16), u16> = HashMap::new();
-    for pos in c0.get_triangles() {
-        let visibility = pos.is_visible(visibility_vector);
+    for triangle in cube.get_triangles() {
+        let visibility = triangle.is_visible(visibility_vector);
         if visibility {
-            let tr = pos.project_to_screen(pvm, dim_x, dim_y);
+            let tr = triangle.project_to_screen(pvm, dim_x, dim_y);
 
             if rasterization_type {
                 for pos in tr.rasterize_to_fill() {
