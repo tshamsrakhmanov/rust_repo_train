@@ -1,19 +1,19 @@
 use core::f64;
 use std::{
+    collections::{HashMap, HashSet},
     f64::consts::PI,
-    io::{Write, stdout},
+    io::{Stdout, Write, stdout},
     time::Duration,
 };
 
 use bresenham::Bresenham as br;
 use crossterm::{
-    QueueableCommand, cursor,
+    cursor,
     event::{Event, KeyCode, poll, read},
     execute,
-    style::{self, Stylize},
+    style::{self, Print, Stylize},
     terminal::{
-        self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
-        enable_raw_mode,
+        self, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
     },
 };
 use nalgebra::{Matrix4, Point3, Scale4, UnitVector3, Vector3, Vector4};
@@ -70,8 +70,11 @@ fn main() -> io::Result<()> {
     execute!(stdout, EnterAlternateScreen)?;
     execute!(stdout, terminal::Clear(terminal::ClearType::All))?;
 
-    let mut screen_buffer: Vec<Pixel> = Vec::new();
-    let mut rasterization_type = false;
+    // let mut screen_buffer: Vec<Pixel> = Vec::new();
+    let mut prev_screen_buffer: HashMap<(u16, u16), u16> = HashMap::new();
+    let mut next_screen_buffer: HashMap<(u16, u16), u16> = HashMap::new();
+
+    let mut is_rasterize_to_fill = false;
     let mut pause = 50;
 
     let scale_vec_up = Vector4::new(1.2, 1.2, 1.2, 0.0);
@@ -129,13 +132,14 @@ fn main() -> io::Result<()> {
             style::PrintStyledContent("t - all white rasterization".magenta())
         )?;
 
+        // STAGE1 - handle keyboard input
         if poll(Duration::from_millis(pause))? {
             if let Event::Key(event) = read()? {
                 if event.code == KeyCode::Char('q') {
                     break 'main_loop;
                 }
                 if event.code == KeyCode::Char('w') {
-                    rasterization_type = !rasterization_type;
+                    is_rasterize_to_fill = !is_rasterize_to_fill;
                 }
                 if event.code == KeyCode::Char('=') {
                     pause += 10;
@@ -173,59 +177,59 @@ fn main() -> io::Result<()> {
             }
         }
 
-        stdout.queue(Clear(ClearType::All))?;
+        // STAGE2 - modify model and update next_screen_buffer
+        c0.rotate_by_axis_mut(10.0, rotation_vec);
 
-        for pos in &screen_buffer {
-            let x = pos.x;
-            let y = pos.y;
+        next_screen_buffer = generate_frame_buffer_from_model(
+            &c0,
+            &visibility_vector,
+            pvm,
+            dim_x,
+            dim_y,
+            is_rasterize_to_fill,
+        );
 
-            execute!(stdout, cursor::MoveTo(dim_x - x, y))?;
-            if rasterization_colored {
-                if pos.color == 0 {
-                    execute!(stdout, style::PrintStyledContent("█".magenta()))?;
-                }
-                if pos.color == 1 {
-                    execute!(stdout, style::PrintStyledContent("█".yellow()))?;
-                }
-                if pos.color == 2 {
-                    execute!(stdout, style::PrintStyledContent("█".red()))?;
-                }
-                if pos.color == 3 {
-                    execute!(stdout, style::PrintStyledContent("█".blue()))?;
-                }
-                if pos.color == 4 {
-                    execute!(stdout, style::PrintStyledContent("█".cyan()))?;
-                }
-                if pos.color == 5 {
-                    execute!(stdout, style::PrintStyledContent("█".green()))?;
-                }
-            } else {
-                execute!(stdout, style::PrintStyledContent("█".white()))?;
+        // STAGE3 - print all - make diff, find what to draw e.t.c. ...
+
+        let keys_prev_buffer: HashSet<&(u16, u16)> = prev_screen_buffer.keys().collect();
+        let keys_next_buffer: HashSet<&(u16, u16)> = next_screen_buffer.keys().collect();
+
+        let to_delete = keys_prev_buffer.difference(&keys_next_buffer);
+        let to_redraw = keys_prev_buffer.intersection(&keys_next_buffer);
+        let to_draw_new = keys_next_buffer.difference(&keys_prev_buffer);
+
+        for pos in to_delete {
+            execute!(stdout, cursor::MoveTo(pos.0, pos.1))?;
+            execute!(stdout, Print(" "))?;
+        }
+        for pos in to_redraw {
+            let color = next_screen_buffer.get(pos);
+            let mut a: &u16 = &0;
+
+            match color {
+                None => {}
+                Some(value) => a = value,
             }
+            execute!(stdout, cursor::MoveTo(pos.0, pos.1))?;
+            execute_write_with_color(&mut stdout, a, rasterization_colored)?;
+        }
+        for pos in to_draw_new {
+            let color = next_screen_buffer.get(pos);
+            let mut a: &u16 = &0;
+
+            match color {
+                None => {}
+                Some(value) => a = value,
+            }
+            execute!(stdout, cursor::MoveTo(pos.0, pos.1))?;
+            execute_write_with_color(&mut stdout, a, rasterization_colored)?;
         }
 
         stdout.flush()?;
 
-        c0.rotate_by_axis_mut(10.0, rotation_vec);
+        // STAGE4 - change buffers
 
-        screen_buffer.clear();
-
-        for pos in c0.get_triangles() {
-            let visibility = pos.is_visible(&visibility_vector);
-            if visibility {
-                let tr = pos.project_to_screen(pvm, dim_x, dim_y);
-
-                if rasterization_type {
-                    for pos in tr.rasterize_to_fill() {
-                        screen_buffer.push(pos);
-                    }
-                } else {
-                    for pos in tr.resterize_to_lines() {
-                        screen_buffer.push(pos);
-                    }
-                }
-            }
-        }
+        prev_screen_buffer = next_screen_buffer;
     }
 
     disable_raw_mode()?;
@@ -330,9 +334,6 @@ impl TriangleV3 {
             self.point0.y - self.point2.y,
             self.point0.z - self.point2.z,
         );
-        let tl_factor_0 = is_top_left(&edge_1, &edge_0);
-        let tl_factor_1 = is_top_left(&edge_2, &edge_1);
-        let tl_factor_2 = is_top_left(&edge_0, &edge_2);
         for x in min_x..max_x {
             for y in min_y..max_y {
                 let x_f64 = x as f64;
@@ -340,21 +341,10 @@ impl TriangleV3 {
                 let temp_vec_0 = Vector3::new(x_f64 - self.point0.x, y_f64 - self.point0.y, 1.0);
                 let temp_vec_1 = Vector3::new(x_f64 - self.point1.x, y_f64 - self.point1.y, 1.0);
                 let temp_vec_2 = Vector3::new(x_f64 - self.point2.x, y_f64 - self.point2.y, 1.0);
-                let w0_raw = edge_0.cross(&temp_vec_0);
-                let w1_raw = edge_1.cross(&temp_vec_1);
-                let w2_raw = edge_2.cross(&temp_vec_2);
-                let mut w0 = w0_raw.z;
-                let mut w1 = w1_raw.z;
-                let mut w2 = w2_raw.z;
-                if !tl_factor_0 {
-                    w0 = w0_raw.z - 1.0;
-                }
-                if !tl_factor_1 {
-                    w1 = w1_raw.z - 1.0;
-                }
-                if !tl_factor_2 {
-                    w2 = w2_raw.z - 1.0;
-                }
+                let w0 = edge_0.cross(&temp_vec_0).z;
+                let w1 = edge_1.cross(&temp_vec_1).z;
+                let w2 = edge_2.cross(&temp_vec_2).z;
+
                 if w0 > 0.0 && w1 > 0.0 && w2 > 0.0 {
                     answer.push(Pixel {
                         x: x,
@@ -367,19 +357,6 @@ impl TriangleV3 {
 
         answer
     }
-}
-
-fn is_top_left(vector0: &Vector3<f64>, vector1: &Vector3<f64>) -> bool {
-    let edge = Vector3::new(vector1.x - vector0.x, vector1.y - vector0.y, 0.0);
-    let mut is_top = true;
-    if edge.y == 0.0 && edge.x > 0.0 {
-        is_top = false;
-    }
-    let mut is_left = true;
-    if edge.y < 0.0 {
-        is_left = false;
-    }
-    is_top || is_left
 }
 
 impl TriangleV4 {
@@ -590,4 +567,53 @@ fn f64_to_u16_rounded(f64_var: f64) -> u16 {
     }
 
     answer as u16
+}
+
+fn execute_write_with_color(
+    stdout: &mut Stdout,
+    color: &u16,
+    rasterization_colored: bool,
+) -> io::Result<()> {
+    if rasterization_colored {
+        match color {
+            0 => execute!(stdout, style::PrintStyledContent("█".magenta())),
+            1 => execute!(stdout, style::PrintStyledContent("█".yellow())),
+            2 => execute!(stdout, style::PrintStyledContent("█".red())),
+            3 => execute!(stdout, style::PrintStyledContent("█".blue())),
+            4 => execute!(stdout, style::PrintStyledContent("█".cyan())),
+            5 => execute!(stdout, style::PrintStyledContent("█".green())),
+            6 => execute!(stdout, Print(' ')),
+            _ => Ok(()),
+        }
+    } else {
+        execute!(stdout, style::PrintStyledContent("█".white()))
+    }
+}
+
+fn generate_frame_buffer_from_model(
+    c0: &CubeV4,
+    visibility_vector: &Vector4<f64>,
+    pvm: Matrix4<f64>,
+    dim_x: u16,
+    dim_y: u16,
+    rasterization_type: bool,
+) -> HashMap<(u16, u16), u16> {
+    let mut temp_buff: HashMap<(u16, u16), u16> = HashMap::new();
+    for pos in c0.get_triangles() {
+        let visibility = pos.is_visible(visibility_vector);
+        if visibility {
+            let tr = pos.project_to_screen(pvm, dim_x, dim_y);
+
+            if rasterization_type {
+                for pos in tr.rasterize_to_fill() {
+                    temp_buff.insert((pos.x, pos.y), pos.color);
+                }
+            } else {
+                for pos in tr.resterize_to_lines() {
+                    temp_buff.insert((pos.x, pos.y), pos.color);
+                }
+            }
+        }
+    }
+    temp_buff
 }
