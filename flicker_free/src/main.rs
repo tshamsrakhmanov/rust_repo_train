@@ -21,10 +21,11 @@ fn main() -> io::Result<()> {
     let dim_x = screen_size.0;
     let dim_y = screen_size.1;
 
-    let mut prev_screen_buffer: HashMap<(u16, u16), Color> = gen_section(dim_x, dim_y);
+    let mut prev_screen_buffer: HashMap<(u16, u16), Color> = HashMap::new();
+
     let mut next_screen_buffer: HashMap<(u16, u16), Color> = HashMap::new();
 
-    let mut flag = true;
+    let mut pos_x: u16 = 0;
 
     enable_raw_mode()?;
     execute!(io::stdout(), EnterAlternateScreen)?;
@@ -32,7 +33,7 @@ fn main() -> io::Result<()> {
     execute!(stdout, cursor::Hide)?;
 
     'main_loop: loop {
-        if poll(Duration::from_millis(30))? {
+        if poll(Duration::from_millis(12))? {
             if let Event::Key(event) = read()? {
                 if event.code == KeyCode::Char('q') {
                     break 'main_loop;
@@ -41,13 +42,13 @@ fn main() -> io::Result<()> {
         }
 
         // SECTION 1 - UPDATE NEXT BUFFER
-        flag = !flag;
 
-        if flag {
-            next_screen_buffer = gen_full(dim_x, dim_y);
-        } else {
-            next_screen_buffer = gen_section(dim_x, dim_y);
+        if pos_x == dim_x {
+            pos_x = 0;
         }
+
+        next_screen_buffer = draw_rect(pos_x);
+        pos_x += 1;
 
         // SECTION 2 - UPDATE DRAWING BUFFER, CONVERT TO STRING AND DRAW
 
@@ -108,5 +109,15 @@ fn gen_full(dim_x: u16, dim_y: u16) -> HashMap<(u16, u16), Color> {
             }
         }
     }
+    screen_buffer
+}
+fn draw_rect(pos_x: u16) -> HashMap<(u16, u16), Color> {
+    let mut screen_buffer: HashMap<(u16, u16), Color> = HashMap::new();
+    for x in pos_x..pos_x + 14 {
+        for y in 5..10 {
+            screen_buffer.insert((x, y), Color::WHITE);
+        }
+    }
+
     screen_buffer
 }
