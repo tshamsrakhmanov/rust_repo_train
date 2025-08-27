@@ -12,8 +12,8 @@ use crossterm::{
     execute,
     style::{self, Stylize},
     terminal::{
-        self, BeginSynchronizedUpdate, Clear, ClearType, EndSynchronizedUpdate,
-        EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
+        self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
+        enable_raw_mode,
     },
 };
 use nalgebra::{Matrix4, Point3, Scale4, UnitVector3, Vector3, Vector4};
