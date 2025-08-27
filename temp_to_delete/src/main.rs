@@ -145,7 +145,11 @@ fn main() -> io::Result<()> {
                     pause += 10;
                 }
                 if event.code == KeyCode::Char('-') {
-                    pause -= 10;
+                    if pause < 11 {
+                        //
+                    } else {
+                        pause -= 10;
+                    }
                 }
                 if event.code == KeyCode::Char('e') {
                     c0.scale_mut(scale_vec_down);
