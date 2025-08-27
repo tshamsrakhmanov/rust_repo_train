@@ -73,21 +73,6 @@ fn main() -> io::Result<()> {
 
         prev_screen_buffer = next_screen_buffer;
 
-        // execute!(stdout, Clear(ClearType::All))?;
-        //
-        // for y in 0..dim_y {
-        //     for x in 0..dim_x {
-        //         let c = next_screen_buffer.get_key_value(&(x, y));
-        //         match c {
-        //             None => {}
-        //             Some(_) => {
-        //                 execute!(stdout, cursor::MoveTo(x, y))?;
-        //                 execute!(stdout, Print("O"))?;
-        //             }
-        //         }
-        //     }
-        // }
-
         stdout.flush()?;
     }
 
