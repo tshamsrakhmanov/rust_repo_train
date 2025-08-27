@@ -22,7 +22,6 @@ fn main() -> io::Result<()> {
     let dim_y = screen_size.1;
 
     let mut prev_screen_buffer: HashMap<(u16, u16), Color> = HashMap::new();
-
     let mut next_screen_buffer: HashMap<(u16, u16), Color> = HashMap::new();
 
     let mut pos_x: u16 = 0;
@@ -48,6 +47,7 @@ fn main() -> io::Result<()> {
         }
 
         next_screen_buffer = draw_rect(pos_x);
+        // next_screen_buffer.clear();
         pos_x += 1;
 
         // SECTION 2 - UPDATE DRAWING BUFFER, CONVERT TO STRING AND DRAW
