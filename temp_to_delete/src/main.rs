@@ -29,8 +29,8 @@ fn main() -> io::Result<()> {
 
     let left = -(dim_x as f64) / 2.0;
     let right = (dim_x as f64) / 2.0;
-    let bottom = -(dim_y as f64) / 1.4;
-    let top = (dim_y as f64) / 1.4;
+    let bottom = -(dim_y as f64) / 2.0;
+    let top = (dim_y as f64) / 2.0;
     let znear = 0.0;
     let zfar = 100.0;
 
@@ -62,7 +62,7 @@ fn main() -> io::Result<()> {
     let point6 = Vector4::new(edge, edge, edge, 1.0);
     let point7 = Vector4::new(edge, -edge, edge, 1.0);
 
-    let mut c0 = CubeV4::new_by_points(
+    let mut cube = CubeV4::new_by_points(
         point0, point1, point2, point3, point4, point5, point6, point7,
     );
 
@@ -152,10 +152,10 @@ fn main() -> io::Result<()> {
                     }
                 }
                 if event.code == KeyCode::Char('e') {
-                    c0.scale_mut(scale_vec_down);
+                    cube.scale_mut(scale_vec_down);
                 }
                 if event.code == KeyCode::Char('r') {
-                    c0.scale_mut(scale_vec_up);
+                    cube.scale_mut(scale_vec_up);
                 }
                 if event.code == KeyCode::Char('z') {
                     rotation_vec = rotation_vec_x;
@@ -182,10 +182,10 @@ fn main() -> io::Result<()> {
         }
 
         // STAGE2 - modify model and update next_screen_buffer
-        c0.rotate_by_axis_mut(10.0, rotation_vec);
+        cube.rotate_by_axis_mut(7.0, rotation_vec);
 
         next_screen_buffer = generate_frame_buffer_from_model(
-            &c0,
+            &cube,
             &visibility_vector,
             pvm,
             dim_x,
@@ -258,7 +258,7 @@ struct TriangleV3 {
 }
 
 impl TriangleV3 {
-    fn new(
+    fn _new(
         point0: Vector3<f64>,
         point1: Vector3<f64>,
         point2: Vector3<f64>,
@@ -561,16 +561,12 @@ impl CubeV4 {
 }
 
 fn f64_to_u16_rounded(f64_var: f64) -> u16 {
-    let mut answer: u16 = 0;
-
-    if f64_var < 0.0 || f64_var.is_infinite() || f64_var.is_nan() {
-        answer = 0;
+    let answer: u16 = if f64_var < 0.0 || f64_var.is_infinite() || f64_var.is_nan() {
+        0
     } else {
-        let temp_answer = f64_var.round();
-        answer = temp_answer as u16;
-    }
-
-    answer as u16
+        f64_var.round() as u16
+    };
+    answer
 }
 
 fn execute_write_with_color(
