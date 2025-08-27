@@ -52,14 +52,7 @@ fn main() -> io::Result<()> {
 
     let pvm = project_matrix * view_matrix * model_matrix;
 
-    // Points declaration for PyramidV4
-    // let point0 = Vector4::new(20.0, 0.0, -20.0, 1.0);
-    // let point1 = Vector4::new(-20.0, 0.0, -20.0, 1.0);
-    // let point2 = Vector4::new(0.0, -20.0, 20.0, 1.0);
-    // let point3 = Vector4::new(0.0, 20.0, 20.0, 1.0);
-    // let mut pyr0 = PyramidV4::new(point0, point1, point2, point3);
-
-    let edge = 20.0;
+    let edge = 5.0;
     let point0 = Vector4::new(-edge, -edge, -edge, 1.0);
     let point1 = Vector4::new(-edge, edge, -edge, 1.0);
     let point2 = Vector4::new(edge, edge, -edge, 1.0);
@@ -75,7 +68,6 @@ fn main() -> io::Result<()> {
 
     execute!(stdout, cursor::Hide)?;
     execute!(stdout, EnterAlternateScreen)?;
-    // execute!(stdout, BeginSynchronizedUpdate)?;
     execute!(stdout, terminal::Clear(terminal::ClearType::All))?;
 
     let mut screen_buffer: Vec<Pixel> = Vec::new();
@@ -95,14 +87,6 @@ fn main() -> io::Result<()> {
     let mut rasterization_colored = true;
     enable_raw_mode()?;
     'main_loop: loop {
-        // Randomized rotation vector
-        // let mut rotation_vec = Vector4::new(
-        //     rand::random_range(0.0..0.1),
-        //     rand::random_range(0.0..0.1),
-        //     rand::random_range(0.9..1.0),
-        //     0.0,
-        // );
-
         execute!(stdout, cursor::MoveTo(1, 1))?;
         execute!(stdout, style::PrintStyledContent("q - Exit".magenta()))?;
         execute!(stdout, cursor::MoveTo(1, 2))?;
@@ -222,26 +206,10 @@ fn main() -> io::Result<()> {
 
         stdout.flush()?;
 
-        // pyr0.rotate_by_axis_mut(10.0, rotation_vec);
         c0.rotate_by_axis_mut(10.0, rotation_vec);
 
         screen_buffer.clear();
-        // for pos in pyr0.get_triangles() {
-        //     let visibility = pos.is_visible(&visibility_vector);
-        //     if visibility {
-        //         let tr = pos.project_to_screen(pvm, dim_x, dim_y);
-        //
-        //         if rasterization_type {
-        //             for pos in tr.rasterize_to_fill() {
-        //                 screen_buffer.push(pos);
-        //             }
-        //         } else {
-        //             for pos in tr.resterize_to_lines() {
-        //                 screen_buffer.push(pos);
-        //             }
-        //         }
-        //     }
-        // }
+
         for pos in c0.get_triangles() {
             let visibility = pos.is_visible(&visibility_vector);
             if visibility {
@@ -262,17 +230,7 @@ fn main() -> io::Result<()> {
 
     disable_raw_mode()?;
     execute!(stdout, cursor::Show)?;
-    // execute!(io::stdout(), EndSynchronizedUpdate)?;
-    // Ok(())
     execute!(stdout, LeaveAlternateScreen)
-}
-
-#[derive(Debug)]
-struct PyramidV4 {
-    point0: Vector4<f64>,
-    point1: Vector4<f64>,
-    point2: Vector4<f64>,
-    point3: Vector4<f64>,
 }
 
 #[derive(Debug)]
@@ -489,42 +447,6 @@ impl TriangleV4 {
             color: self.color,
         };
         a
-    }
-}
-
-impl PyramidV4 {
-    fn get_triangles(&self) -> Vec<TriangleV4> {
-        let mut answer: Vec<TriangleV4> = Vec::new();
-        let tri0 = TriangleV4::new(self.point1, self.point2, self.point3, 0);
-        let tri1 = TriangleV4::new(self.point1, self.point0, self.point2, 1);
-        let tri2 = TriangleV4::new(self.point1, self.point3, self.point0, 2);
-        let tri3 = TriangleV4::new(self.point2, self.point0, self.point3, 3);
-        answer.push(tri0);
-        answer.push(tri1);
-        answer.push(tri2);
-        answer.push(tri3);
-
-        answer
-    }
-    fn new(
-        point0: Vector4<f64>,
-        point1: Vector4<f64>,
-        point2: Vector4<f64>,
-        point3: Vector4<f64>,
-    ) -> PyramidV4 {
-        let answer = PyramidV4 {
-            point0: point0,
-            point1: point1,
-            point2: point2,
-            point3: point3,
-        };
-        answer
-    }
-    fn rotate_by_axis_mut(&mut self, degrees: f64, vector: Vector4<f64>) {
-        self.point0 = rot_by_z(self.point0, vector, degrees);
-        self.point1 = rot_by_z(self.point1, vector, degrees);
-        self.point2 = rot_by_z(self.point2, vector, degrees);
-        self.point3 = rot_by_z(self.point3, vector, degrees);
     }
 }
 
