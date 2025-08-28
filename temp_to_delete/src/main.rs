@@ -34,10 +34,12 @@ fn main() -> io::Result<()> {
     let zfar = 100.0;
 
     let project_matrix = nalgebra::Matrix4::new_orthographic(left, right, bottom, top, znear, zfar);
+    // let project_matrix =
+    //     nalgebra::Matrix4::new_perspective((dim_x / dim_y) as f64, dim_y as f64, 0.0, 100.0);
 
-    let view_x: f64 = 10.0;
-    let view_y: f64 = 10.0;
-    let view_z: f64 = 5.0;
+    let view_x: f64 = 200.0;
+    let view_y: f64 = 200.0;
+    let view_z: f64 = 100.0;
 
     let visibility_vector = Vector4::new(view_x, view_y, view_z, 0.0);
 
@@ -51,7 +53,7 @@ fn main() -> io::Result<()> {
 
     let pvm = project_matrix * view_matrix * model_matrix;
 
-    let edge = 5.0;
+    let edge = 1.0;
     let point0 = Vector4::new(-edge, -edge, -edge, 1.0);
     let point1 = Vector4::new(-edge, edge, -edge, 1.0);
     let point2 = Vector4::new(edge, edge, -edge, 1.0);
@@ -206,26 +208,20 @@ fn main() -> io::Result<()> {
             execute!(stdout, Print(" "))?;
         }
         for pos in to_redraw {
-            let color = next_screen_buffer.get(pos);
-            let mut a: &u16 = &0;
+            let prev_color = prev_screen_buffer.get(pos).unwrap();
+            let next_color = next_screen_buffer.get(pos).unwrap();
 
-            match color {
-                None => {}
-                Some(value) => a = value,
+            if prev_color == next_color {
+                //
+            } else {
+                execute!(stdout, cursor::MoveTo(pos.0, pos.1))?;
+                execute_write_with_color(&mut stdout, next_color, rasterization_colored)?;
             }
-            execute!(stdout, cursor::MoveTo(pos.0, pos.1))?;
-            execute_write_with_color(&mut stdout, a, rasterization_colored)?;
         }
         for pos in to_draw_new {
-            let color = next_screen_buffer.get(pos);
-            let mut a: &u16 = &0;
-
-            match color {
-                None => {}
-                Some(value) => a = value,
-            }
+            let color = next_screen_buffer.get(pos).unwrap();
             execute!(stdout, cursor::MoveTo(pos.0, pos.1))?;
-            execute_write_with_color(&mut stdout, a, rasterization_colored)?;
+            execute_write_with_color(&mut stdout, color, rasterization_colored)?;
         }
 
         stdout.flush()?;
