@@ -341,15 +341,18 @@ impl TriangleV3 {
                 let temp_vec_1 = Vector3::new(x_f64 - self.point1.x, y_f64 - self.point1.y, 1.0);
                 let temp_vec_2 = Vector3::new(x_f64 - self.point2.x, y_f64 - self.point2.y, 1.0);
                 let w0 = edge_0.cross(&temp_vec_0).z;
-                let w1 = edge_1.cross(&temp_vec_1).z;
-                let w2 = edge_2.cross(&temp_vec_2).z;
-
-                if w0 > 0.0 && w1 > 0.0 && w2 > 0.0 {
-                    answer.push(Pixel {
-                        x: x,
-                        y: y,
-                        color: self.color,
-                    });
+                if w0 > 0.0 {
+                    let w1 = edge_1.cross(&temp_vec_1).z;
+                    if w1 > 0.0 {
+                        let w2 = edge_2.cross(&temp_vec_2).z;
+                        if w2 > 0.0 {
+                            answer.push(Pixel {
+                                x: x,
+                                y: y,
+                                color: self.color,
+                            });
+                        }
+                    }
                 }
             }
         }
