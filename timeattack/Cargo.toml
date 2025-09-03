@@ -1,0 +1,9 @@
+[package]
+name = "timeattack"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bresenham = "0.1.1"
+crossterm = "0.29.0"
+nalgebra = "0.34.0"
