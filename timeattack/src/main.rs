@@ -1,9 +1,9 @@
 use bresenham;
 use crossterm::{
-    cursor::{self, Hide, Show},
+    cursor::{self},
     event::{Event, KeyCode, poll, read},
     execute,
-    style::{self, PrintStyledContent, Stylize},
+    style::{PrintStyledContent, Stylize},
     terminal::{
         self, Clear, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
     },
@@ -18,10 +18,10 @@ use std::{
 
 fn main() -> io::Result<()> {
     let mut stdout = stdout();
-    execute!(stdout, cursor::Hide);
+    execute!(stdout, cursor::Hide)?;
     execute!(stdout, EnterAlternateScreen)?;
-    execute!(stdout, Clear(terminal::ClearType::All));
-    enable_raw_mode();
+    execute!(stdout, Clear(terminal::ClearType::All))?;
+    enable_raw_mode()?;
 
     let edge = 20.0;
     let p0 = Vector4::new(0.0, -edge, edge, 1.0);
@@ -39,27 +39,10 @@ fn main() -> io::Result<()> {
     };
 
     let screen = terminal::size()?;
-    let dim_x = screen.0;
-    let dim_y = screen.1;
+    let dim_x = screen.0 as f64;
+    let dim_y = screen.1 as f64;
 
-    let left = screen.0 as f64 / -2.0;
-    let right = screen.0 as f64 / 2.0;
-    let bottom = screen.1 as f64 / -1.0;
-    let top = screen.1 as f64 / 1.0;
-    let znear = 0.0;
-    let zfar = 1.0;
-
-    let projection = Matrix4::new_orthographic(left, right, bottom, top, znear, zfar);
-
-    let eye = Point3::new(pov_position.x, pov_position.y, pov_position.z);
-    let target = Point3::new(0.0, 0.0, 0.0);
-    let up = Vector3::new(0.0, 0.0, 1.0);
-
-    let view_matrix = Matrix4::look_at_rh(&eye, &target, &up);
-
-    let model_matrix = Matrix4::identity();
-
-    let pvm_matrix = projection * view_matrix * model_matrix;
+    let pvm_matrix = calculate_projection_matrix(dim_x, dim_y, pov_position);
 
     'main_loop: loop {
         if poll(Duration::from_millis(30))? {
@@ -74,7 +57,7 @@ fn main() -> io::Result<()> {
 
         for triangle in pyramid0.get_triangles() {
             if triangle.is_visible(pov_position) {
-                let projection = triangle.projection(pvm_matrix, dim_x as f64, dim_y as f64);
+                let projection = triangle.projection(pvm_matrix, dim_x, dim_y);
                 let line0 = bresenham::Bresenham::new(
                     (projection.point0.0 as isize, projection.point0.1 as isize),
                     (projection.point1.0 as isize, projection.point1.1 as isize),
@@ -197,9 +180,9 @@ impl TriangleV4 {
         let p2y = (dim_y / 2.0) * (1.0 + p2_raw.y);
 
         let a = TriangleV3 {
-            point0: (p0x as u16, p0y as u16),
-            point1: (p1x as u16, p1y as u16),
-            point2: (p2x as u16, p2y as u16),
+            point0: (p0x, p0y),
+            point1: (p1x, p1y),
+            point2: (p2x, p2y),
         };
         a
     }
@@ -207,9 +190,9 @@ impl TriangleV4 {
 
 #[derive(Debug)]
 struct TriangleV3 {
-    point0: (u16, u16),
-    point1: (u16, u16),
-    point2: (u16, u16),
+    point0: (f64, f64),
+    point1: (f64, f64),
+    point2: (f64, f64),
 }
 
 fn rotate_point_by_axis_z(point: Vector4<f64>, angle_deg: f64) -> Vector4<f64> {
@@ -218,4 +201,26 @@ fn rotate_point_by_axis_z(point: Vector4<f64>, angle_deg: f64) -> Vector4<f64> {
     let answer_v3 = rotation * point_to_v3;
     let answer_v4 = Vector4::new(answer_v3.x, answer_v3.y, answer_v3.z, 1.0);
     answer_v4
+}
+
+fn calculate_projection_matrix(dim_x: f64, dim_y: f64, pov_position: Vector4<f64>) -> Matrix4<f64> {
+    let left = dim_x / -2.0;
+    let right = dim_x / 2.0;
+    let bottom = dim_y / -1.0;
+    let top = dim_y / 1.0;
+    let znear = 0.0;
+    let zfar = 1.0;
+
+    let projection = Matrix4::new_orthographic(left, right, bottom, top, znear, zfar);
+
+    let eye = Point3::new(pov_position.x, pov_position.y, pov_position.z);
+    let target = Point3::new(0.0, 0.0, 0.0);
+    let up = Vector3::new(0.0, 0.0, 1.0);
+
+    let view_matrix = Matrix4::look_at_rh(&eye, &target, &up);
+
+    let model_matrix = Matrix4::identity();
+
+    let pvm_matrix = projection * view_matrix * model_matrix;
+    pvm_matrix
 }
