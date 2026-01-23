@@ -1,3 +1,4 @@
+use nalgebra::*;
 use std::fs::File;
 use std::io::prelude::*;
 
