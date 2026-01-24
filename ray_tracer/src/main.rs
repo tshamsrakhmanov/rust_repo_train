@@ -35,3 +35,7 @@ fn main() -> std::io::Result<()> {
 
     Ok(())
 }
+
+fn write_pixel_to_file(file: &mut File, r: f32, g: f32, b: f32) {
+    let _ = write!(file, "{} {} {}\n", r, g, b);
+}
