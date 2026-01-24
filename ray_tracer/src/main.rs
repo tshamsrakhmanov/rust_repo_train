@@ -24,8 +24,8 @@ fn main() -> std::io::Result<()> {
     let viewport_v = Vector3::new(0.0, -viewport_height, 0.0);
 
     // calculate delta between pixels
-    let pixel_delta_u = viewport_u / image_width as f32;
-    let pixel_delta_v = viewport_v / image_width as f32;
+    let pixel_delta_u = viewport_u / (image_width as f32);
+    let pixel_delta_v = viewport_v / (image_height as f32);
 
     // calculate location of upper left pixel
     let viewport_upper_left =
@@ -42,8 +42,8 @@ fn main() -> std::io::Result<()> {
 
     // fill the space
     for y_pos in 0..image_height {
-        let a = image_height - y_pos;
-        println!("Scan lines remaining: {}", a);
+        // let a = image_height - y_pos;
+        // println!("Scan lines remaining: {}", a);
         for x_pos in 0..image_width {
             let pixel_center =
                 pixel00loc + (x_pos as f32 * pixel_delta_u) + (y_pos as f32 * pixel_delta_v);
@@ -64,6 +64,13 @@ fn main() -> std::io::Result<()> {
         viewport_width / viewport_height
     );
 
+    println!("{}", pixel00loc);
+    println!("{}", pixel00loc + image_width as f32 * pixel_delta_u);
+    println!("{}", pixel00loc + image_height as f32 * pixel_delta_v);
+    println!(
+        "{}",
+        pixel00loc + image_height as f32 * pixel_delta_v + image_width as f32 * pixel_delta_u
+    );
     Ok(())
 }
 
@@ -96,5 +103,5 @@ fn hit_sphere(center: Vector3<f32>, radius: f32, ray: &Ray) -> bool {
     let b = -2.0 * ray.get_direction().dot(&oc);
     let c = oc.dot(&oc) - radius * radius;
     let disc = b * b - 4.0 * a * c;
-    disc > 0.0
+    disc >= 0.0
 }
