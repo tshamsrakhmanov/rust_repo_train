@@ -10,12 +10,18 @@ pub mod ray_module {
         pub fn new(origin: Vector3<f32>, direction: Vector3<f32>) -> Ray {
             Ray { origin, direction }
         }
+
         pub fn at(&self, t: f32) -> Vector3<f32> {
             let answer = self.origin + t * self.direction;
             answer
         }
-        pub fn get_dicrection(&self) -> Vector3<f32> {
+
+        pub fn get_direction(&self) -> Vector3<f32> {
             self.direction
+        }
+
+        pub fn get_origin(&self) -> Vector3<f32> {
+            self.origin
         }
     }
 }
