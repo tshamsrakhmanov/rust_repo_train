@@ -9,7 +9,7 @@ mod ray;
 
 fn main() -> std::io::Result<()> {
     // var declaration
-    let image_width = 400;
+    let image_width = 1920;
     let aspect_ratio: f32 = 16.0 / 9.0;
     let image_height: i32 = ((image_width as f32) / aspect_ratio) as i32;
 
@@ -42,8 +42,8 @@ fn main() -> std::io::Result<()> {
 
     // fill the space
     for y_pos in 0..image_height {
-        // let a = image_height - y_pos;
-        // println!("Scan lines remaining: {}", a);
+        let a = image_height - y_pos;
+        println!("Scan lines remaining: {}", a);
         for x_pos in 0..image_width {
             let pixel_center =
                 pixel00loc + (x_pos as f32 * pixel_delta_u) + (y_pos as f32 * pixel_delta_v);
@@ -86,9 +86,14 @@ fn write_pixel(file: &mut File, pixel: Vector3<f32>) {
 
 fn ray_color(ray: &Ray) -> Vector3<f32> {
     // calculate sphere intersection
-    if hit_sphere(Vector3::new(0.0, 0.0, -1.0), 0.5, ray) {
-        return Vector3::new(1.0, 0.0, 0.0);
+    let t = hit_sphere(Vector3::new(0.0, 0.0, -1.0), 0.5, ray);
+    if t > 0.0 {
+        let a: Vector3<f32> = (ray.at(t) - Vector3::new(0.0, 0.0, -1.0)).normalize();
+        return 0.5 * Vector3::new(a.x + 1.0, a.y + 1.0, a.z + 1.0);
     }
+    // if hit_sphere(Vector3::new(0.0, 0.0, -1.0), 0.5, ray) {
+    //     return Vector3::new(1.0, 0.0, 0.0);
+    // }
 
     // calculate background color
     let unit_dicrection = ray.get_direction().normalize();
@@ -97,11 +102,17 @@ fn ray_color(ray: &Ray) -> Vector3<f32> {
     bg_color
 }
 
-fn hit_sphere(center: Vector3<f32>, radius: f32, ray: &Ray) -> bool {
+fn hit_sphere(center: Vector3<f32>, radius: f32, ray: &Ray) -> f32 {
     let oc: Vector3<f32> = center - ray.get_origin();
     let a = ray.get_direction().dot(&ray.get_direction());
     let b = -2.0 * ray.get_direction().dot(&oc);
     let c = oc.dot(&oc) - radius * radius;
     let disc = b * b - 4.0 * a * c;
-    disc >= 0.0
+    // disc >= 0.0
+    if disc < 0.0 {
+        return -1.0;
+    } else {
+        let answer = (-b - disc.sqrt()) / (2.0 * a);
+        answer
+    }
 }
