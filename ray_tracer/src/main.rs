@@ -4,13 +4,14 @@ use std::io::prelude::*;
 fn main() -> std::io::Result<()> {
     // VAR - raw declaration
     let color_type = String::from("P3");
-    let x_dim = 255;
+    let x_dim = 500;
     let y_dim = 255;
     let coloring_dim = 255;
 
     // file connect
     let mut file = File::create("pic.ppm")?;
 
+    // write boilerplate of file type e.t.c...
     write!(file, "{}\n", color_type)?;
     write!(file, "{} {}\n", x_dim, y_dim)?;
     write!(file, "{}\n", coloring_dim)?;
