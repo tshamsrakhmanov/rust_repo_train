@@ -1,22 +1,26 @@
-use nalgebra::*;
 use std::fs::File;
 use std::io::prelude::*;
 
 fn main() -> std::io::Result<()> {
+    // VAR - raw declaration
+    let color_type = String::from("P3");
+    let x_dim = 255;
+    let y_dim = 255;
+    let coloring_dim = 255;
+
+    // file connect
     let mut file = File::create("pic.ppm")?;
-    file.write_all(b"P3\n")?;
-    file.write_all(b"255 255\n")?;
-    file.write_all(b"255\n")?;
 
-    let x_pos_limit = 255;
-    let y_pos_limit = 255;
+    write!(file, "{}\n", color_type)?;
+    write!(file, "{} {}\n", x_dim, y_dim)?;
+    write!(file, "{}\n", coloring_dim)?;
 
-    for y_pos in 0..y_pos_limit {
-        let a = y_pos_limit - y_pos;
+    for y_pos in 0..y_dim {
+        let a = y_dim - y_pos;
         println!("Scan lines remaining: {}", a);
-        for x_pos in 0..x_pos_limit {
-            let r_float: f32 = (x_pos as f32) / ((x_pos_limit as f32) - 1.0);
-            let g_float: f32 = (y_pos as f32) / ((y_pos_limit as f32) - 1.0);
+        for x_pos in 0..x_dim {
+            let r_float: f32 = (x_pos as f32) / ((x_dim as f32) - 1.0);
+            let g_float: f32 = (y_pos as f32) / ((y_dim as f32) - 1.0);
             let b_float: f32 = 0.0;
 
             let ir = (255.999 * r_float) as u8;
