@@ -34,7 +34,7 @@ fn main() -> std::io::Result<()> {
         let a = image_height - y_pos;
         println!("Scan lines remaining: {}", a);
         for x_pos in 0..image_width {
-            let p = Pixel::new(
+            let p: Vector3<f32> = Vector3::new(
                 (x_pos as f32) / ((image_width as f32) - 1.0),
                 (y_pos as f32) / ((image_height as f32) - 1.0),
                 0.0,
@@ -56,24 +56,12 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-fn write_pixel(file: &mut File, pixel: Pixel) {
-    let ir = (255.999 * pixel.r) as u8;
-    let ig = (255.999 * pixel.g) as u8;
-    let ib = (255.999 * pixel.b) as u8;
+fn write_pixel(file: &mut File, pixel: Vector3<f32>) {
+    let ir = (255.999 * pixel.x) as u8;
+    let ig = (255.999 * pixel.y) as u8;
+    let ib = (255.999 * pixel.z) as u8;
 
     let str1 = format!("{} {} {}\n", ir, ig, ib);
     let byt1 = str1.as_bytes();
     let _ = file.write(byt1);
-}
-
-struct Pixel {
-    r: f32,
-    g: f32,
-    b: f32,
-}
-
-impl Pixel {
-    fn new(r: f32, g: f32, b: f32) -> Pixel {
-        Pixel { r: r, g: g, b: b }
-    }
 }
