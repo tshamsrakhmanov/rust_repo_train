@@ -85,15 +85,12 @@ fn write_pixel(file: &mut File, pixel: Vector3<f32>) {
 }
 
 fn ray_color(ray: &Ray) -> Vector3<f32> {
-    // calculate sphere intersection
+    // calculate sphere intersection with normales
     let t = hit_sphere(Vector3::new(0.0, 0.0, -1.0), 0.5, ray);
     if t > 0.0 {
         let a: Vector3<f32> = (ray.at(t) - Vector3::new(0.0, 0.0, -1.0)).normalize();
         return 0.5 * Vector3::new(a.x + 1.0, a.y + 1.0, a.z + 1.0);
     }
-    // if hit_sphere(Vector3::new(0.0, 0.0, -1.0), 0.5, ray) {
-    //     return Vector3::new(1.0, 0.0, 0.0);
-    // }
 
     // calculate background color
     let unit_dicrection = ray.get_direction().normalize();
@@ -103,12 +100,12 @@ fn ray_color(ray: &Ray) -> Vector3<f32> {
 }
 
 fn hit_sphere(center: Vector3<f32>, radius: f32, ray: &Ray) -> f32 {
+    // logic entiryle streamlined to give pixel colors of normales
     let oc: Vector3<f32> = center - ray.get_origin();
     let a = ray.get_direction().dot(&ray.get_direction());
     let b = -2.0 * ray.get_direction().dot(&oc);
     let c = oc.dot(&oc) - radius * radius;
     let disc = b * b - 4.0 * a * c;
-    // disc >= 0.0
     if disc < 0.0 {
         return -1.0;
     } else {
