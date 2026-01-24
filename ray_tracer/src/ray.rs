@@ -14,9 +14,8 @@ pub mod ray_module {
             let answer = self.origin + t * self.direction;
             answer
         }
-        pub fn ray_color(ray: Ray) -> Vector3<f32> {
-            let a: Vector3<f32> = Vector3::new(0.0, 0.0, 0.0);
-            a
+        pub fn get_dicrection(&self) -> Vector3<f32> {
+            self.direction
         }
     }
 }
