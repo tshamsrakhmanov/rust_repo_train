@@ -4,8 +4,9 @@ use std::io::prelude::*;
 fn main() -> std::io::Result<()> {
     // var declaration
     let color_type = String::from("P3");
-    let x_dim = 400;
-    let y_dim = 200;
+    let x_dim = 500;
+    let coef_dim: f32 = 1.77777777;
+    let y_dim: i32 = ((x_dim as f32) / coef_dim) as i32;
     let coloring_dim = 255;
 
     // file connect
