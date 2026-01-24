@@ -1,5 +1,4 @@
-pub mod Ray_module {
-
+pub mod ray_module {
     use nalgebra::{self as na, Vector3};
 
     pub struct Ray {

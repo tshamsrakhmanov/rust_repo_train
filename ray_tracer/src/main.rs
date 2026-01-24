@@ -24,10 +24,10 @@ fn main() -> std::io::Result<()> {
     write!(file, "{}\n", 255)?;
 
     // test
-    // let p0: Vector3<f32> = Vector3::new(0.0, 0.0, 0.0);
-    // let p1: Vector3<f32> = Vector3::new(1.0, 1.0, 1.0);
-    // let r1 = ray::Ray_module::Ray::new(p0, p1);
-    // let r2 = r1.at(23.0);
+    let p0: Vector3<f32> = Vector3::new(0.0, 0.0, 0.0);
+    let p1: Vector3<f32> = Vector3::new(1.0, 1.0, 1.0);
+    let r1 = ray::ray_module::Ray::new(p0, p1);
+    let r2 = r1.at(23.0);
 
     // fill the space
     for y_pos in 0..image_height {
@@ -45,7 +45,13 @@ fn main() -> std::io::Result<()> {
     }
     println!("Done!");
 
-    println!("{} {} ", viewport_width, viewport_height);
+    println!("{} {} {}", image_width, image_height, aspect_ratio);
+    println!(
+        "{} {} {}",
+        viewport_width,
+        viewport_height,
+        viewport_width / viewport_height
+    );
 
     Ok(())
 }
