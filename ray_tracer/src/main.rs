@@ -9,7 +9,7 @@ mod ray;
 
 fn main() -> std::io::Result<()> {
     // var declaration
-    let image_width = 400;
+    let image_width = 900;
     let aspect_ratio: f32 = 16.0 / 9.0;
     let image_height: i32 = ((image_width as f32) / aspect_ratio) as i32;
 
@@ -73,6 +73,7 @@ fn main() -> std::io::Result<()> {
     //     "{}",
     //     pixel00loc + image_height as f32 * pixel_delta_v + image_width as f32 * pixel_delta_u
     // );
+    //
     Ok(())
 }
 
@@ -102,16 +103,28 @@ fn ray_color(ray: &Ray) -> Vector3<f32> {
 }
 
 fn hit_sphere(center: Vector3<f32>, radius: f32, ray: &Ray) -> f32 {
-    // logic entiryle streamlined to give pixel colors of normales
     let oc: Vector3<f32> = center - ray.get_origin();
-    let a = ray.get_direction().dot(&ray.get_direction());
-    let b = -2.0 * ray.get_direction().dot(&oc);
-    let c = oc.dot(&oc) - radius * radius;
-    let disc = b * b - 4.0 * a * c;
+
+    // old version of disctiminant calculation
+    // let a = ray.get_direction().dot(&ray.get_direction());
+    // let b = -2.0 * ray.get_direction().dot(&oc);
+    // let c = oc.dot(&oc) - radius * radius;
+    // let disc = b * b - 4.0 * a * c;
+    // if disc < 0.0 {
+    //     return -1.0;
+    // } else {
+    //     let answer = (-b - disc.sqrt()) / (2.0 * a);
+    //     answer
+    // }
+
+    // new version of disctiminant calc - must faster, i dunno
+    let a = ray.get_direction().magnitude().powi(2);
+    let h = ray.get_direction().dot(&oc);
+    let c = oc.magnitude().powi(2) - radius * radius;
+    let disc = h * h - a * c;
     if disc < 0.0 {
         return -1.0;
     } else {
-        let answer = (-b - disc.sqrt()) / (2.0 * a);
-        answer
+        return (h - disc.sqrt()) / a;
     }
 }
