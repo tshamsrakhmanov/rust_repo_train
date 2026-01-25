@@ -9,7 +9,7 @@ mod ray;
 
 fn main() -> std::io::Result<()> {
     // var declaration
-    let image_width = 1920;
+    let image_width = 400;
     let aspect_ratio: f32 = 16.0 / 9.0;
     let image_height: i32 = ((image_width as f32) / aspect_ratio) as i32;
 
@@ -56,21 +56,23 @@ fn main() -> std::io::Result<()> {
     }
     println!("Done!");
 
-    println!("{} {} {}", image_width, image_height, aspect_ratio);
-    println!(
-        "{} {} {}",
-        viewport_width,
-        viewport_height,
-        viewport_width / viewport_height
-    );
+    // debug info
 
-    println!("{}", pixel00loc);
-    println!("{}", pixel00loc + image_width as f32 * pixel_delta_u);
-    println!("{}", pixel00loc + image_height as f32 * pixel_delta_v);
-    println!(
-        "{}",
-        pixel00loc + image_height as f32 * pixel_delta_v + image_width as f32 * pixel_delta_u
-    );
+    // println!("{} {} {}", image_width, image_height, aspect_ratio);
+    // println!(
+    //     "{} {} {}",
+    //     viewport_width,
+    //     viewport_height,
+    //     viewport_width / viewport_height
+    // );
+    //
+    // println!("{}", pixel00loc);
+    // println!("{}", pixel00loc + image_width as f32 * pixel_delta_u);
+    // println!("{}", pixel00loc + image_height as f32 * pixel_delta_v);
+    // println!(
+    //     "{}",
+    //     pixel00loc + image_height as f32 * pixel_delta_v + image_width as f32 * pixel_delta_u
+    // );
     Ok(())
 }
 
