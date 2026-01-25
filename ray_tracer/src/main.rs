@@ -5,11 +5,13 @@ use nalgebra::Vector3;
 
 use crate::ray::ray_module::Ray;
 
+mod geometry;
+mod hittable;
 mod ray;
 
 fn main() -> std::io::Result<()> {
     // var declaration
-    let image_width = 900;
+    let image_width = 400;
     let aspect_ratio: f32 = 16.0 / 9.0;
     let image_height: i32 = ((image_width as f32) / aspect_ratio) as i32;
 
@@ -98,7 +100,7 @@ fn ray_color(ray: &Ray) -> Vector3<f32> {
     // calculate background color
     let unit_dicrection = ray.get_direction().normalize();
     let a = 0.5 * (unit_dicrection.y + 1.0);
-    let bg_color = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
+    let bg_color = (1.0 - a) * Vector3::new(0.0, 0.0, 0.0) + a * Vector3::new(0.3, 0.5, 0.8);
     bg_color
 }
 
