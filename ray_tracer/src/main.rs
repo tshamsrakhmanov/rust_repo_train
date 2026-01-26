@@ -1,3 +1,6 @@
+use std::f32::INFINITY;
+use std::f32::NEG_INFINITY;
+use std::f32::consts::PI;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -11,7 +14,7 @@ mod ray;
 
 fn main() -> std::io::Result<()> {
     // var declaration
-    let image_width = 400;
+    let image_width = 500;
     let aspect_ratio: f32 = 16.0 / 9.0;
     let image_height: i32 = ((image_width as f32) / aspect_ratio) as i32;
 
@@ -99,7 +102,7 @@ fn ray_color(ray: &Ray) -> Vector3<f32> {
 
     // calculate background color
     let unit_dicrection = ray.get_direction().normalize();
-    let a = 0.5 * (unit_dicrection.y + 1.0);
+    let a = 0.5 * (unit_dicrection.z + 1.0);
     let bg_color = (1.0 - a) * Vector3::new(0.0, 0.0, 0.0) + a * Vector3::new(0.3, 0.5, 0.8);
     bg_color
 }
@@ -129,4 +132,8 @@ fn hit_sphere(center: Vector3<f32>, radius: f32, ray: &Ray) -> f32 {
     } else {
         return (h - disc.sqrt()) / a;
     }
+}
+
+fn deg_to_rad(degrees: f32) -> f32 {
+    degrees * PI / 180.0
 }

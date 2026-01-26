@@ -2,7 +2,7 @@ pub mod geometry {
     use nalgebra::Vector3;
 
     use crate::Ray;
-    use crate::hittable::hittable::{Hittable, TraitHittableSphere};
+    use crate::hittable::hittable::{HitRecord, TraitHittableSphere};
 
     pub struct Sphere {
         center: Vector3<f32>,
@@ -17,8 +17,9 @@ pub mod geometry {
             }
         }
     }
+
     impl TraitHittableSphere for Sphere {
-        fn hit(&self, ray: &Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut Hittable) -> bool {
+        fn hit(&self, ray: &Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut HitRecord) -> bool {
             let oc: Vector3<f32> = self.center - ray.get_origin();
             let a = ray.get_direction().magnitude().powi(2);
             let h = ray.get_direction().dot(&oc);

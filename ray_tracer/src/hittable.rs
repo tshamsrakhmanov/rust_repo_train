@@ -1,14 +1,22 @@
 pub mod hittable {
     use nalgebra::Vector3;
 
-    use crate::ray::ray_module::Ray;
+    use crate::{
+        geometry::{self, geometry::Sphere},
+        ray::ray_module::Ray,
+    };
 
     pub struct HittableObjectsList {
-        objects: Vec<Hittable>,
+        objects: Vec<geometry::geometry::Sphere>,
     }
 
     impl HittableObjectsList {
-        pub fn add_object(&mut self, object: Hittable) {
+        pub fn new() -> HittableObjectsList {
+            HittableObjectsList {
+                objects: Vec::new(),
+            }
+        }
+        pub fn add_object(&mut self, object: Sphere) {
             self.objects.push(object);
         }
         pub fn clear(&mut self) {
@@ -16,14 +24,22 @@ pub mod hittable {
         }
     }
 
-    pub struct Hittable {
+    pub struct HitRecord {
         p: Vector3<f32>,
         normal: Vector3<f32>,
         t: f32,
         front_face: bool,
     }
 
-    impl Hittable {
+    impl HitRecord {
+        pub fn new() -> HitRecord {
+            HitRecord {
+                p: Vector3::new(0.0, 0.0, 0.0),
+                normal: Vector3::new(0.0, 0.0, 0.0),
+                t: 0.0,
+                front_face: false,
+            }
+        }
         pub fn set_p(&mut self, p: Vector3<f32>) {
             self.p = p;
         }
@@ -56,6 +72,10 @@ pub mod hittable {
 
     pub trait TraitHittableSphere {
         // fn hit() {};
-        fn hit(&self, ray: &Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut Hittable) -> bool;
+        fn hit(&self, ray: &Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut HitRecord) -> bool;
+    }
+    pub trait TraitHittableObjectList {
+        // fn hit() {};
+        fn hit(&self, ray: &Ray, ray_tmin: f32, ray_tmax: &f32, rec: &mut HitRecord) -> bool;
     }
 }
