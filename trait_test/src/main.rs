@@ -2,10 +2,12 @@ use nalgebra::Vector3;
 use std::f32::INFINITY;
 
 fn main() {
+    // ray definition
     let ray_origin = Vector3::new(15.0, 0.0, 0.0);
     let ray_direction = Vector3::new(1000.0, 0.0, 0.0);
     let r1 = Ray::new(ray_origin, ray_direction);
 
+    // objects definition
     let pos1 = Vector3::new(0.0, 0.0, 0.0);
     let pos2 = Vector3::new(10.0, 0.0, 0.0);
     let pos3 = Vector3::new(20.0, 0.0, 0.0);
@@ -13,25 +15,33 @@ fn main() {
     let obj2 = Object::new(pos2);
     let obj3 = Object::new(pos3);
 
+    // world definition
     let mut wrld1 = World::new();
     wrld1.add_object(obj1);
     wrld1.add_object(obj2);
     wrld1.add_object(obj3);
 
-    println!("{:?}", r1);
+    println!("---------------");
+    println!("World in test:");
+    println!("{:?}", wrld1);
+
+    // scan for hits:
+
+    println!("---------------");
+    println!("Perform hit:");
 
     for obj in &wrld1.list_of_objects {
-        println!("------------");
+        println!("{:?}", &r1);
+        println!("{:?}", &obj);
         let a = obj.is_hit(&r1, 0.0, INFINITY);
         if a.is_hit {
-            println!("{:?} is hit!", obj);
+            println!("YES hit");
             println!("{:?} record is:", a.hit_record);
         } else {
-            println!("{:?} NO hit", obj);
+            println!("NO hit");
         }
+        println!("------------");
     }
-
-    println!("{:?}", wrld1);
 }
 
 #[derive(Debug)]
@@ -99,6 +109,7 @@ impl Hittable for Object {
 
         if result_of_check.0 {
             temp_hitrecord.distance = result_of_check.1;
+            temp_hitrecord.point_of_hit = self.position;
             let a = HitResultTuple::new(true, temp_hitrecord);
             return a;
         }
@@ -115,19 +126,24 @@ fn is_point_on_line(
     tolerance: f32,
 ) -> (bool, f32) {
     let vec_d = vec_b - vec_a;
-    // println!("direction line {:?}", vec_d);
     let vec_e = vec_c - vec_a;
-    // println!("direction test point {:?}", vec_e);
+    // 1st check - if point is on the line
+    // len of cross prod give a understanding if point is on the line
     let cross_product_length = vec_e.cross(&vec_d).norm();
-    let dot_product = vec_d.dot(&vec_e);
-    // println!("cross product {:?}", cross_product_length);
-    // println!("dot   product {:?}", dot_product);
 
-    if cross_product_length < tolerance && dot_product > 0.0 {
-        let distance_of_hit = vec_e.norm();
-        return (true, distance_of_hit);
+    if cross_product_length < tolerance {
+        // 2nd check
+        // dot product give an understanding how much from start point we are with requested point
+        let dot_product = vec_d.dot(&vec_e);
+
+        if dot_product > 0.0 {
+            let distance_of_hit = vec_e.norm();
+            return (true, distance_of_hit);
+        } else {
+            return (false, -1.0);
+        }
     } else {
-        return (false, 0.0);
+        return (false, -1.0);
     }
 }
 
