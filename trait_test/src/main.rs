@@ -28,15 +28,15 @@ fn main() {
     // scan for hits:
 
     println!("---------------");
-    println!("Perform hit:");
 
     for obj in &wrld1.list_of_objects {
+        println!("Perform hit:");
         println!("{:?}", &r1);
         println!("{:?}", &obj);
-        let a = obj.is_hit(&r1, 0.0, INFINITY);
-        if a.is_hit {
+        let assert_object = obj.is_hit(&r1, 0.0, INFINITY);
+        if assert_object.is_hit {
             println!("YES hit");
-            println!("{:?} record is:", a.hit_record);
+            println!("{:?} record is:", assert_object.hit_record);
         } else {
             println!("NO hit");
         }
