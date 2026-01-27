@@ -3,7 +3,7 @@ use std::f32::INFINITY;
 
 fn main() {
     // ray definition
-    let ray_origin = Vector3::new(15.0, 0.0, 0.0);
+    let ray_origin = Vector3::new(-15.0, 0.0, 0.0);
     let ray_direction = Vector3::new(1000.0, 0.0, 0.0);
     let r1 = Ray::new(ray_origin, ray_direction);
 
@@ -29,18 +29,12 @@ fn main() {
 
     println!("---------------");
 
-    for obj in &wrld1.list_of_objects {
-        println!("Perform hit:");
-        println!("{:?}", &r1);
-        println!("{:?}", &obj);
-        let assert_object = obj.is_hit(&r1, 0.0, INFINITY);
-        if assert_object.is_hit {
-            println!("YES hit");
-            println!("{:?} record is:", assert_object.hit_record);
-        } else {
-            println!("NO hit");
-        }
-        println!("------------");
+    let world_by_ray = wrld1.hit_test(&r1, 0.0, INFINITY);
+
+    if world_by_ray.is_hit {
+        println!("{:?}", world_by_ray.hit_record);
+    } else {
+        println!("No hit recored in give world");
     }
 }
 
@@ -81,6 +75,7 @@ struct Object {
     position: Vector3<f32>,
 }
 
+#[derive(Debug)]
 struct HitResultTuple {
     is_hit: bool,
     hit_record: HitRecord,
@@ -102,7 +97,7 @@ impl Object {
 }
 
 impl Hittable for Object {
-    fn is_hit(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple {
+    fn hit_test(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple {
         let mut temp_hitrecord = HitRecord::new_default();
 
         let result_of_check = is_point_on_line(self.position, ray.origin, ray.direction, 0.001);
@@ -179,6 +174,30 @@ impl World {
     }
 }
 
+impl Hittable for World {
+    fn hit_test(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple {
+        let a1 = HitRecord::new_default();
+        let mut a = HitResultTuple::new(false, a1);
+
+        for obj in &self.list_of_objects {
+            println!("Perform test:");
+            println!("{:?}", &ray);
+            println!("{:?}", &obj);
+            let assert_object = obj.hit_test(&ray, 0.0, INFINITY);
+            if assert_object.is_hit {
+                println!("YES hit");
+                println!("{:?} record is:", assert_object.hit_record);
+                a = assert_object;
+            } else {
+                println!("NO hit");
+            }
+            println!("------------");
+        }
+
+        a
+    }
+}
+
 trait Hittable {
-    fn is_hit(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple;
+    fn hit_test(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple;
 }
