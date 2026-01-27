@@ -1,9 +1,9 @@
 use nalgebra::Vector3;
-use std::f32::INFINITY;
+use std::f32::{INFINITY, NEG_INFINITY};
 
 fn main() {
     // ray definition
-    let ray_origin = Vector3::new(-15.0, 0.0, 0.0);
+    let ray_origin = Vector3::new(15.0, 0.0, 0.0);
     let ray_direction = Vector3::new(1000.0, 0.0, 0.0);
     let r1 = Ray::new(ray_origin, ray_direction);
 
@@ -24,17 +24,16 @@ fn main() {
     println!("---------------");
     println!("World in test:");
     println!("{:?}", wrld1);
+    println!("---------------");
 
     // scan for hits:
-
-    println!("---------------");
 
     let world_by_ray = wrld1.hit_test(&r1, 0.0, INFINITY);
 
     if world_by_ray.is_hit {
         println!("{:?}", world_by_ray.hit_record);
     } else {
-        println!("No hit recored in give world");
+        println!("No hit recored in given world");
     }
 }
 
@@ -178,6 +177,7 @@ impl Hittable for World {
     fn hit_test(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple {
         let a1 = HitRecord::new_default();
         let mut a = HitResultTuple::new(false, a1);
+        let mut temp_dist = INFINITY;
 
         for obj in &self.list_of_objects {
             println!("Perform test:");
@@ -186,8 +186,11 @@ impl Hittable for World {
             let assert_object = obj.hit_test(&ray, 0.0, INFINITY);
             if assert_object.is_hit {
                 println!("YES hit");
-                println!("{:?} record is:", assert_object.hit_record);
-                a = assert_object;
+                println!("record is {:?} ", assert_object.hit_record);
+                if assert_object.hit_record.distance < temp_dist {
+                    temp_dist = assert_object.hit_record.distance;
+                    a = assert_object;
+                }
             } else {
                 println!("NO hit");
             }
