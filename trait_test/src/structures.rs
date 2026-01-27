@@ -38,7 +38,7 @@ impl HitRecord {
         let s2 = format!("x:{}, y:{}, z:{}", p3, p4, p5);
         write!(
             f,
-            "HitRecord[ distance:{}, point_of_hit:({}), normale:({}), is_outside:{}]\n",
+            "HitRecord [distance:{}, point_of_hit:({}), normale:({}), is_outside:{}]\n",
             self.distance, s1, s2, self.is_outside
         )
     }
@@ -65,7 +65,6 @@ impl HitRecord {
     }
 }
 
-#[derive(Debug)]
 /// ********************************************
 /// Object
 /// ********************************************
@@ -74,10 +73,29 @@ pub struct Object {
     position: Vector3<f32>,
 }
 
+impl fmt::Display for Object {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
+
+impl fmt::Debug for Object {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
+
 impl Object {
     /// Creates an object via given point
     pub fn new(position: Vector3<f32>) -> Object {
         Object { position: position }
+    }
+    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let p1 = self.position.x;
+        let p2 = self.position.y;
+        let p3 = self.position.z;
+        let s1 = format!("(x:{}, y:{}, z:{})", p1, p2, p3);
+        write!(f, "Object [point: {}]", s1)
     }
 }
 
@@ -99,7 +117,6 @@ impl Hittable for Object {
     }
 }
 
-#[derive(Debug)]
 /// ********************************************
 /// HitResultTuple
 /// ********************************************
@@ -112,6 +129,18 @@ pub struct HitResultTuple {
     pub hit_record: HitRecord,
 }
 
+impl fmt::Display for HitResultTuple {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
+
+impl fmt::Debug for HitResultTuple {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
+
 impl HitResultTuple {
     pub fn new(is_hit: bool, hit_record: HitRecord) -> HitResultTuple {
         HitResultTuple {
@@ -119,18 +148,35 @@ impl HitResultTuple {
             hit_record: hit_record,
         }
     }
+    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "HitResultTuple[ is_hit: {}, hit_record: {} ]\n",
+            self.is_hit, self.hit_record
+        )
+    }
 }
 
 /// ********************************************
 /// RAY struct
 /// ********************************************
 
-#[derive(Debug)]
 pub struct Ray {
     origin: Vector3<f32>,
     direction: Vector3<f32>,
 }
 
+impl fmt::Display for Ray {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
+
+impl fmt::Debug for Ray {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
 impl Ray {
     pub fn new(origin: Vector3<f32>, direction: Vector3<f32>) -> Ray {
         Ray {
@@ -138,17 +184,37 @@ impl Ray {
             direction: direction,
         }
     }
+    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let p0 = self.origin.x;
+        let p1 = self.origin.y;
+        let p2 = self.origin.z;
+        let p3 = self.direction.x;
+        let p4 = self.direction.y;
+        let p5 = self.direction.z;
+        let s1 = format!("(x:{}, y:{}, z:{})", p0, p1, p2);
+        let s2 = format!("(x:{}, y:{}, z:{})", p3, p4, p5);
+        write!(f, "Ray [origin: {}, direction: {}]\n", s1, s2)
+    }
 }
 
 /// ********************************************
 /// WORLD struct
 /// ********************************************
 
-#[derive(Debug)]
 pub struct World {
     list_of_objects: Vec<Object>,
 }
+impl fmt::Display for World {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
 
+impl fmt::Debug for World {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
 impl World {
     pub fn new() -> World {
         World {
@@ -158,6 +224,10 @@ impl World {
 
     pub fn add_object(&mut self, object: Object) {
         self.list_of_objects.push(object);
+    }
+    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s1 = format!("{:?}", self.list_of_objects);
+        write!(f, "World [{}]\n", s1)
     }
 }
 

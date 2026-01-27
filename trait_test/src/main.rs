@@ -25,12 +25,12 @@ fn main() {
     // world definition
     let mut wrld1 = World::new();
     wrld1.add_object(obj3);
-    wrld1.add_object(obj2);
     wrld1.add_object(obj1);
+    wrld1.add_object(obj2);
 
     println!("---------------");
     println!("World in test:");
-    println!("{:?}", wrld1);
+    println!("{}", wrld1);
     println!("---------------");
 
     // scan for hits:
@@ -38,7 +38,7 @@ fn main() {
     let world_by_ray = wrld1.hit_test(&r1, 0.0, INFINITY);
 
     if world_by_ray.is_hit {
-        println!("{:?}", world_by_ray.hit_record);
+        println!("{}", world_by_ray.hit_record);
     } else {
         println!("No hit recored in given world");
     }
