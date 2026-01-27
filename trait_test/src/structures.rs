@@ -1,7 +1,12 @@
 use crate::aux_fn::is_point_on_line;
 use nalgebra::Vector3;
+use std::fmt;
 
-#[derive(Debug)]
+/// ********************************************
+/// HitRecord
+/// ********************************************
+/// Used to describe finitive fact of hit on an object
+/// Provided with discription: where, how, e.t.c.
 pub struct HitRecord {
     distance: f32,
     point_of_hit: Vector3<f32>,
@@ -9,7 +14,34 @@ pub struct HitRecord {
     is_outside: bool,
 }
 
+impl fmt::Display for HitRecord {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
+
+impl fmt::Debug for HitRecord {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
+
 impl HitRecord {
+    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let p0 = self.point_of_hit.x;
+        let p1 = self.point_of_hit.y;
+        let p2 = self.point_of_hit.z;
+        let p3 = self.normale.x;
+        let p4 = self.normale.y;
+        let p5 = self.normale.z;
+        let s1 = format!("x:{}, y:{}, z:{}", p0, p1, p2);
+        let s2 = format!("x:{}, y:{}, z:{}", p3, p4, p5);
+        write!(
+            f,
+            "HitRecord[ distance:{}, point_of_hit:({}), normale:({}), is_outside:{}]\n",
+            self.distance, s1, s2, self.is_outside
+        )
+    }
     pub fn new_default() -> HitRecord {
         HitRecord {
             distance: 0.0,
@@ -18,7 +50,7 @@ impl HitRecord {
             is_outside: false,
         }
     }
-    pub fn new(
+    pub fn _new(
         distance: f32,
         point_of_hit: Vector3<f32>,
         normale: Vector3<f32>,
@@ -34,26 +66,16 @@ impl HitRecord {
 }
 
 #[derive(Debug)]
+/// ********************************************
+/// Object
+/// ********************************************
+/// Description of a genereic Object which is consist only of one point in a space.
 pub struct Object {
     position: Vector3<f32>,
 }
 
-#[derive(Debug)]
-pub struct HitResultTuple {
-    pub is_hit: bool,
-    pub hit_record: HitRecord,
-}
-
-impl HitResultTuple {
-    pub fn new(is_hit: bool, hit_record: HitRecord) -> HitResultTuple {
-        HitResultTuple {
-            is_hit: is_hit,
-            hit_record: hit_record,
-        }
-    }
-}
-
 impl Object {
+    /// Creates an object via given point
     pub fn new(position: Vector3<f32>) -> Object {
         Object { position: position }
     }
@@ -78,6 +100,32 @@ impl Hittable for Object {
 }
 
 #[derive(Debug)]
+/// ********************************************
+/// HitResultTuple
+/// ********************************************
+/// When we hit some object and assert a result - this is a tuple which we return back.
+/// If object is hit - is_hit: TRUE && hit_record: will be filled by relative data (distance,
+/// is_outside e.t.c)
+/// If object NOT hit - is_hit: FALSE && hit_record: is return with new_default data (all zeroes)
+pub struct HitResultTuple {
+    pub is_hit: bool,
+    pub hit_record: HitRecord,
+}
+
+impl HitResultTuple {
+    pub fn new(is_hit: bool, hit_record: HitRecord) -> HitResultTuple {
+        HitResultTuple {
+            is_hit: is_hit,
+            hit_record: hit_record,
+        }
+    }
+}
+
+/// ********************************************
+/// RAY struct
+/// ********************************************
+
+#[derive(Debug)]
 pub struct Ray {
     origin: Vector3<f32>,
     direction: Vector3<f32>,
@@ -91,6 +139,10 @@ impl Ray {
         }
     }
 }
+
+/// ********************************************
+/// WORLD struct
+/// ********************************************
 
 #[derive(Debug)]
 pub struct World {
@@ -122,7 +174,7 @@ impl Hittable for World {
             let assert_object = obj.hit_test(&ray, start, temp_dist);
             if assert_object.is_hit {
                 println!("YES hit");
-                println!("record is {:?} ", assert_object.hit_record);
+                println!("record is {} ", assert_object.hit_record);
                 if assert_object.hit_record.distance < temp_dist {
                     temp_dist = assert_object.hit_record.distance;
                     a = assert_object;
@@ -137,6 +189,10 @@ impl Hittable for World {
         a
     }
 }
+
+/// ********************************************
+/// TRAITS
+/// ********************************************
 
 pub trait Hittable {
     fn hit_test(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple;
