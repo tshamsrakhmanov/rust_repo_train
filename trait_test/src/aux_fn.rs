@@ -6,6 +6,9 @@ pub fn is_point_on_line(
     vec_b: Vector3<f32>,
     tolerance: f32,
 ) -> (bool, f32) {
+    // c - testing point
+    // a - start of line
+    // b - end of line
     let vec_d = vec_b - vec_a;
     let vec_e = vec_c - vec_a;
     // 1st check - if point is on the line
