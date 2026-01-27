@@ -3,7 +3,7 @@ use std::f32::{INFINITY, NEG_INFINITY};
 
 fn main() {
     // ray definition
-    let ray_origin = Vector3::new(15.0, 0.0, 0.0);
+    let ray_origin = Vector3::new(-15.0, 0.0, 0.0);
     let ray_direction = Vector3::new(1000.0, 0.0, 0.0);
     let r1 = Ray::new(ray_origin, ray_direction);
 
@@ -17,9 +17,9 @@ fn main() {
 
     // world definition
     let mut wrld1 = World::new();
-    wrld1.add_object(obj1);
-    wrld1.add_object(obj2);
     wrld1.add_object(obj3);
+    wrld1.add_object(obj2);
+    wrld1.add_object(obj1);
 
     println!("---------------");
     println!("World in test:");
@@ -177,13 +177,13 @@ impl Hittable for World {
     fn hit_test(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple {
         let a1 = HitRecord::new_default();
         let mut a = HitResultTuple::new(false, a1);
-        let mut temp_dist = INFINITY;
+        let mut temp_dist = finish;
 
         for obj in &self.list_of_objects {
             println!("Perform test:");
             println!("{:?}", &ray);
             println!("{:?}", &obj);
-            let assert_object = obj.hit_test(&ray, 0.0, INFINITY);
+            let assert_object = obj.hit_test(&ray, start, temp_dist);
             if assert_object.is_hit {
                 println!("YES hit");
                 println!("record is {:?} ", assert_object.hit_record);
@@ -194,6 +194,7 @@ impl Hittable for World {
             } else {
                 println!("NO hit");
             }
+            println!(">>> temp_dist:{}", temp_dist);
             println!("------------");
         }
 
