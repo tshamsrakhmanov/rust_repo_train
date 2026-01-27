@@ -40,15 +40,15 @@ pub fn ray_color(ray: &Ray, world: &World) -> Vector3<f32> {
     let result = world.hit_test(ray, 0.0, INFINITY);
     // if hit detected - color the ray in approptirate colors
     if result.is_hit {
-        let a = 0.5 * result.hit_record.get_normale() + Vector3::new(1.0, 1.0, 1.0);
-        a
-    } else {
-        // if NO hit - just return gray color as a result of background color
-        let unit_dicrection = ray.get_direction().normalize();
-        let a = 0.5 * (unit_dicrection.y + 1.0);
-        let bg_color = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
-        return bg_color;
+        let a = 0.5 * (result.hit_record.get_normale() + Vector3::new(1.0, 1.0, 1.0));
+        return a;
     }
+
+    // if not hit - just draw background
+    let unit_dicrection = ray.get_direction().normalize();
+    let a = 0.5 * (unit_dicrection.y + 1.0);
+    let bg_color = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
+    return bg_color;
 }
 
 pub fn write_pixel(file: &mut File, pixel: Vector3<f32>) {

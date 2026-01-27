@@ -249,8 +249,7 @@ impl World {
 
 impl Hittable for World {
     fn hit_test(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple {
-        let a1 = HitRecord::new_default();
-        let mut result = HitResultTuple::new(false, a1);
+        let mut result = HitResultTuple::new(false, HitRecord::new_default());
         let mut temp_dist = finish;
 
         for obj in &self.list_of_objects {
@@ -325,7 +324,7 @@ impl Hittable for Sphere {
             temp_res.is_hit = false;
             return temp_res;
         }
-        // temp_res
+
         let sqrtd = disc.sqrt();
 
         let mut root = (h - sqrtd) / a;
