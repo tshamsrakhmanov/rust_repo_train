@@ -47,8 +47,8 @@ pub fn ray_color(ray: &Ray, world: &World) -> Vector3<f32> {
     } else {
         // if NO hit - just return gray color as a result of background color
         let unit_dicrection = ray.get_direction().normalize();
-        let a = 0.5 * (unit_dicrection.z + 1.0);
-        let bg_color = (1.0 - a) * Vector3::new(0.0, 0.0, 0.0) + a * Vector3::new(0.3, 0.5, 0.8);
+        let a = 0.5 * (unit_dicrection.y + 1.0);
+        let bg_color = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
         return bg_color;
     }
 }

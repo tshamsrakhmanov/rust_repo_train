@@ -4,15 +4,14 @@ use std::io::prelude::*;
 
 use crate::{
     aux_fn::ray_color,
-    structures::{Object, Ray, Sphere, World},
+    structures::{Ray, Sphere, World},
 };
 mod aux_fn;
 mod structures;
 
 fn main() -> std::io::Result<()> {
-    // BOILER PLATE FROM ORIGINAL PROJECT
-    // var declaration
-    let image_width = 500;
+    // screen parameters
+    let image_width = 400;
     let aspect_ratio: f32 = 16.0 / 9.0;
     let image_height: i32 = ((image_width as f32) / aspect_ratio) as i32;
 
@@ -42,46 +41,18 @@ fn main() -> std::io::Result<()> {
     write!(file, "{}\n", "P3")?;
     write!(file, "{} {}\n", image_width, image_height)?;
     write!(file, "{}\n", 255)?;
-    // BOILER PLATE FROM ORIGINAL PROJECT
-
-    // ray definition
-    // let ray_origin = Vector3::new(-15.0, 0.0, 0.0);
-    // let ray_direction = Vector3::new(1000.0, 0.0, 0.0);
-    // let r1 = Ray::new(ray_origin, ray_direction);
-
-    // objects definition
-    // let pos1 = Vector3::new(0.0, 0.0, -10.0);
-    // let pos2 = Vector3::new(0.0, 0.0, -20.0);
-    // let pos3 = Vector3::new(0.0, 0.0, -30.0);
-    // let obj1 = Object::new(pos1);
-    // let obj2 = Object::new(pos2);
-    // let obj3 = Object::new(pos3);
 
     let p1 = Vector3::new(0.0, 0.0, -1.0);
     let r1: f32 = 0.5;
+    let p2 = Vector3::new(-0.5, 0.0, -1.0);
+    let r2: f32 = 0.2;
     let s1 = Sphere::new(p1, r1);
+    let s2 = Sphere::new(p2, r2);
 
     // world definition
     let mut world1 = World::new();
     world1.add_object(s1);
-    // world1.add_object(obj3);
-    // world1.add_object(obj1);
-    // world1.add_object(obj2);
-
-    // println!("---------------");
-    // println!("World in test:");
-    // println!("{}", world1);
-    // println!("---------------");
-
-    // scan for hits:
-
-    // let pixel_color = world1.hit_test(&r1, 0.0, INFINITY);
-
-    // if pixel_color.is_hit {
-    //     println!("{}", pixel_color.hit_record);
-    // } else {
-    //     println!("No hit recored in given world");
-    // }
+    world1.add_object(s2);
 
     // fill the space
     for y_pos in 0..image_height {
@@ -94,15 +65,6 @@ fn main() -> std::io::Result<()> {
             let ray1 = Ray::new(camera_center, ray_direction);
             let temp_color1 = ray_color(&ray1, &world1);
 
-            // let hit_result = world1.hit_test(&ray1, 0.0, INFINITY);
-            // let mut temp_color = Vector3::new(0.0, 0.0, 0.0);
-            // if hit_result.is_hit {
-            //     temp_color.x = 1.0;
-            //     temp_color.y = 1.0;
-            //     temp_color.z = 1.0;
-            // } else {
-            // }
-            //
             aux_fn::write_pixel(&mut file, temp_color1);
         }
     }
