@@ -1,4 +1,4 @@
-use crate::aux_fn::is_point_on_line;
+use crate::aux_fn::{is_face_normal, is_point_on_line};
 use nalgebra::Vector3;
 use std::fmt;
 
@@ -49,6 +49,9 @@ impl HitRecord {
             normale: Vector3::new(0.0, 0.0, 0.0),
             is_outside: false,
         }
+    }
+    pub fn get_distance(&self) -> f32 {
+        self.distance
     }
     pub fn _new(
         distance: f32,
@@ -184,6 +187,10 @@ impl Ray {
             direction: direction,
         }
     }
+    pub fn translocate(&self, distance: f32) -> Vector3<f32> {
+        let answer = self.origin + distance * self.direction;
+        answer
+    }
     pub fn get_origin(&self) -> Vector3<f32> {
         self.origin
     }
@@ -312,9 +319,33 @@ impl Hittable for Sphere {
 
         let disc = h * h - a * c;
         if disc < 0.0 {
-            temp_res.is_hit = true;
+            temp_res.is_hit = false;
             return temp_res;
         }
+        // temp_res
+        let sqrtd = disc.sqrt();
+
+        let mut root = (h - sqrtd) / a;
+        if root <= start || finish <= root {
+            root = (h + sqrtd) / a;
+            if root <= start || finish <= root {
+                temp_res.is_hit = false;
+                return temp_res;
+            }
+        }
+
+        temp_res.is_hit = true;
+        temp_res.hit_record.distance = root;
+        temp_res.hit_record.point_of_hit = ray.translocate(root);
+        let n1 = ((temp_res.hit_record.point_of_hit - self.origin) / self.radius).normalize();
+        temp_res.hit_record.normale = n1;
+        let check_for_inside_outside = is_face_normal(ray, n1);
+        if check_for_inside_outside.0 {
+            // temp_res.hit_record.
+        } else {
+            temp_res.hit_record.normale = -n1;
+        }
+
         temp_res
     }
 }

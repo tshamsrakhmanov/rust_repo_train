@@ -36,18 +36,20 @@ pub fn is_point_on_line(
 }
 
 pub fn ray_color(ray: &Ray, world: &World) -> Vector3<f32> {
-    let mut a = Vector3::new(0.0, 0.0, 0.0);
     // generate test of ray test in world
     let result = world.hit_test(ray, 0.0, INFINITY);
     // if hit detected - color the ray in approptirate colors
     if result.is_hit {
-        a.x = 1.0;
-        a.y = 1.0;
-        a.z = 1.0;
-        return a;
-    // if NO hit - just return gray color as a result of background color
+        let a: Vector3<f32> = (ray.translocate(result.hit_record.get_distance())
+            - Vector3::new(0.0, 0.0, -1.0))
+        .normalize();
+        return 0.5 * Vector3::new(a.x + 1.0, a.y + 1.0, a.z + 1.0);
     } else {
-        return a;
+        // if NO hit - just return gray color as a result of background color
+        let unit_dicrection = ray.get_direction().normalize();
+        let a = 0.5 * (unit_dicrection.z + 1.0);
+        let bg_color = (1.0 - a) * Vector3::new(0.0, 0.0, 0.0) + a * Vector3::new(0.3, 0.5, 0.8);
+        return bg_color;
     }
 }
 
@@ -59,4 +61,24 @@ pub fn write_pixel(file: &mut File, pixel: Vector3<f32>) {
     let str1 = format!("{} {} {}\n", ir, ig, ib);
     let byt1 = str1.as_bytes();
     let _ = file.write(byt1);
+}
+
+pub fn is_face_normal(ray: &Ray, outward_normal_unit: Vector3<f32>) -> (bool, Vector3<f32>) {
+    let mut answer_bool = false;
+    let mut answer_vec = Vector3::new(0.0, 0.0, 0.0);
+    let angle = ray.get_direction().dot(&outward_normal_unit);
+
+    if angle < 0.0 {
+        answer_bool = true;
+    } else {
+        answer_bool = false;
+    }
+
+    if answer_bool {
+        answer_vec = outward_normal_unit;
+    } else {
+        answer_vec = -outward_normal_unit;
+    }
+
+    (answer_bool, answer_vec)
 }
