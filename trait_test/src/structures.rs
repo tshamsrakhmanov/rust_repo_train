@@ -50,6 +50,9 @@ impl HitRecord {
             is_outside: false,
         }
     }
+    pub fn get_normale(&self) -> Vector3<f32> {
+        self.normale
+    }
     pub fn get_distance(&self) -> f32 {
         self.distance
     }
@@ -247,7 +250,7 @@ impl World {
 impl Hittable for World {
     fn hit_test(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple {
         let a1 = HitRecord::new_default();
-        let mut a = HitResultTuple::new(false, a1);
+        let mut result = HitResultTuple::new(false, a1);
         let mut temp_dist = finish;
 
         for obj in &self.list_of_objects {
@@ -260,7 +263,7 @@ impl Hittable for World {
                 // println!("record is {} ", assert_object.hit_record);
                 if assert_object.hit_record.distance < temp_dist {
                     temp_dist = assert_object.hit_record.distance;
-                    a = assert_object;
+                    result = assert_object;
                 }
             } else {
                 // println!("NO hit");
@@ -268,7 +271,7 @@ impl Hittable for World {
             // println!(">>> temp_dist:{}", temp_dist);
             // println!("------------");
         }
-        a
+        result
     }
 }
 
@@ -337,13 +340,17 @@ impl Hittable for Sphere {
         temp_res.is_hit = true;
         temp_res.hit_record.distance = root;
         temp_res.hit_record.point_of_hit = ray.translocate(root);
-        let n1 = ((temp_res.hit_record.point_of_hit - self.origin) / self.radius).normalize();
-        temp_res.hit_record.normale = n1;
+        temp_res.hit_record.normale =
+            (temp_res.hit_record.point_of_hit - self.origin) / self.radius;
+        let n1 = (temp_res.hit_record.point_of_hit - self.origin) / self.radius;
         let check_for_inside_outside = is_face_normal(ray, n1);
         if check_for_inside_outside.0 {
+            temp_res.hit_record.normale = n1;
+            temp_res.hit_record.is_outside = true;
             // temp_res.hit_record.
         } else {
             temp_res.hit_record.normale = -n1;
+            temp_res.hit_record.is_outside = false;
         }
 
         temp_res

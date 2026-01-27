@@ -40,10 +40,8 @@ pub fn ray_color(ray: &Ray, world: &World) -> Vector3<f32> {
     let result = world.hit_test(ray, 0.0, INFINITY);
     // if hit detected - color the ray in approptirate colors
     if result.is_hit {
-        let a: Vector3<f32> = (ray.translocate(result.hit_record.get_distance())
-            - Vector3::new(0.0, 0.0, -1.0))
-        .normalize();
-        return 0.5 * Vector3::new(a.x + 1.0, a.y + 1.0, a.z + 1.0);
+        let a = 0.5 * result.hit_record.get_normale() + Vector3::new(1.0, 1.0, 1.0);
+        a
     } else {
         // if NO hit - just return gray color as a result of background color
         let unit_dicrection = ray.get_direction().normalize();
