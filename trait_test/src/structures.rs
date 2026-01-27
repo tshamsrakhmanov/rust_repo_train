@@ -184,6 +184,12 @@ impl Ray {
             direction: direction,
         }
     }
+    pub fn get_origin(&self) -> Vector3<f32> {
+        self.origin
+    }
+    pub fn get_direction(&self) -> Vector3<f32> {
+        self.direction
+    }
     pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let p0 = self.origin.x;
         let p1 = self.origin.y;
@@ -202,7 +208,7 @@ impl Ray {
 /// ********************************************
 
 pub struct World {
-    list_of_objects: Vec<Object>,
+    list_of_objects: Vec<Sphere>,
 }
 impl fmt::Display for World {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -222,7 +228,7 @@ impl World {
         }
     }
 
-    pub fn add_object(&mut self, object: Object) {
+    pub fn add_object(&mut self, object: Sphere) {
         self.list_of_objects.push(object);
     }
     pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -238,28 +244,80 @@ impl Hittable for World {
         let mut temp_dist = finish;
 
         for obj in &self.list_of_objects {
-            println!("Perform test:");
-            println!("{:?}", &ray);
-            println!("{:?}", &obj);
+            // println!("Perform test:");
+            // println!("{:?}", &ray);
+            // println!("{:?}", &obj);
             let assert_object = obj.hit_test(&ray, start, temp_dist);
             if assert_object.is_hit {
-                println!("YES hit");
-                println!("record is {} ", assert_object.hit_record);
+                // println!("YES hit");
+                // println!("record is {} ", assert_object.hit_record);
                 if assert_object.hit_record.distance < temp_dist {
                     temp_dist = assert_object.hit_record.distance;
                     a = assert_object;
                 }
             } else {
-                println!("NO hit");
+                // println!("NO hit");
             }
-            println!(">>> temp_dist:{}", temp_dist);
-            println!("------------");
+            // println!(">>> temp_dist:{}", temp_dist);
+            // println!("------------");
         }
-
         a
     }
 }
 
+/// ********************************************
+/// Sphere
+/// ********************************************
+
+pub struct Sphere {
+    origin: Vector3<f32>,
+    radius: f32,
+}
+impl fmt::Display for Sphere {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
+
+impl fmt::Debug for Sphere {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
+
+impl Sphere {
+    pub fn new(origin: Vector3<f32>, radius: f32) -> Sphere {
+        Sphere {
+            origin: origin,
+            radius: radius,
+        }
+    }
+
+    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let p0 = self.origin.x;
+        let p1 = self.origin.y;
+        let p2 = self.origin.z;
+        let s1 = format!("(x:{}, y:{}, z:{})", p0, p1, p2);
+        write!(f, "Sphere [origin:{}, radius:{}]\n", s1, self.radius)
+    }
+}
+
+impl Hittable for Sphere {
+    fn hit_test(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple {
+        let mut temp_res = HitResultTuple::new(false, HitRecord::new_default());
+        let oc: Vector3<f32> = self.origin - ray.get_origin();
+        let a = ray.get_direction().magnitude().powi(2);
+        let h = ray.get_direction().dot(&oc);
+        let c = oc.magnitude().powi(2) - self.radius * self.radius;
+
+        let disc = h * h - a * c;
+        if disc < 0.0 {
+            temp_res.is_hit = true;
+            return temp_res;
+        }
+        temp_res
+    }
+}
 /// ********************************************
 /// TRAITS
 /// ********************************************
