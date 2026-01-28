@@ -1,5 +1,5 @@
 use crate::structures::{Interval, Ray};
-use nalgebra::{Vector3, clamp};
+use nalgebra::Vector3;
 use std::fs::File;
 use std::io::prelude::*;
 

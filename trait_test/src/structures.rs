@@ -1,5 +1,6 @@
 use crate::aux_fn::{is_face_normal, write_pixel};
 use nalgebra::Vector3;
+use rand::Rng;
 use std::fs::File;
 use std::io::prelude::*;
 use std::{
@@ -363,23 +364,42 @@ pub struct Camera {
     pixel00loc: Vector3<f32>,
     pixel_delta_u: Vector3<f32>,
     pixel_delta_v: Vector3<f32>,
+    samples_per_pixel: u8,
+    pixel_sample_scale: f32,
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f32, image_width: i32) -> Camera {
+    pub fn new(aspect_ratio: f32, image_width: i32, samples_per_pixel: u8) -> Camera {
+        let pixel_sample_scale = 1.0 / samples_per_pixel as f32;
+        let image_height = ((image_width as f32) / aspect_ratio) as i32;
+        let center = Vector3::new(0.0, 0.0, 0.0);
+
+        let focal_length: f32 = 1.0;
+        let viewport_height: f32 = 2.0;
+        let viewport_width: f32 = viewport_height * (image_width as f32 / image_height as f32);
+        let viewport_u = Vector3::new(viewport_width, 0.0, 0.0);
+        let viewport_v = Vector3::new(0.0, -viewport_height, 0.0);
+        let pixel_delta_u = viewport_u / (image_width as f32);
+        let pixel_delta_v = viewport_v / (image_height as f32);
+        let viewport_u = Vector3::new(viewport_width, 0.0, 0.0);
+        let viewport_v = Vector3::new(0.0, -viewport_height, 0.0);
+        let viewport_upper_left =
+            center - Vector3::new(0.0, 0.0, focal_length) - viewport_u / 2.0 - viewport_v / 2.0;
+        let pixel00loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+
         Camera {
             aspect_ratio: aspect_ratio,
             image_width: image_width,
-            image_height: 0,
-            center: Vector3::new(0.0, 0.0, 0.0),
-            pixel00loc: Vector3::new(0.0, 0.0, 0.0),
-            pixel_delta_u: Vector3::new(0.0, 0.0, 0.0),
-            pixel_delta_v: Vector3::new(0.0, 0.0, 0.0),
+            image_height: image_height,
+            center: center,
+            pixel00loc: pixel00loc,
+            pixel_delta_u: pixel_delta_u,
+            pixel_delta_v: pixel_delta_v,
+            samples_per_pixel: samples_per_pixel,
+            pixel_sample_scale: pixel_sample_scale,
         }
     }
     pub fn render(&mut self, world: &World) -> std::io::Result<()> {
-        self.initialize();
-
         let mut file = File::create("pic.ppm")?;
 
         // write boilerplate of file type e.t.c...
@@ -391,14 +411,14 @@ impl Camera {
             let a = self.image_height - y_pos;
             println!("Scan lines remaining: {}", a);
             for x_pos in 0..self.image_width {
-                let pixel_center = self.pixel00loc
-                    + (x_pos as f32 * self.pixel_delta_u)
-                    + (y_pos as f32 * self.pixel_delta_v);
-                let ray_direction = pixel_center - self.center;
-                let ray1 = Ray::new(self.center, ray_direction);
-                let color = Camera::ray_color(&ray1, &world);
+                let mut temp_color = Vector3::new(0.0, 0.0, 0.0);
+                for _ in 0..self.samples_per_pixel {
+                    let temp_ray = Camera::get_ray(&self, x_pos, y_pos);
+                    let new_color = Camera::ray_color(&temp_ray, world);
+                    temp_color = temp_color + new_color;
+                }
 
-                write_pixel(&mut file, color);
+                write_pixel(&mut file, temp_color * self.pixel_sample_scale);
             }
         }
 
@@ -421,24 +441,21 @@ impl Camera {
         let bg_color = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
         return bg_color;
     }
-    fn initialize(&mut self) {
-        self.image_height = ((self.image_width as f32) / self.aspect_ratio) as i32;
-        self.center = Vector3::new(0.0, 0.0, 0.0);
-        let focal_length: f32 = 1.0;
-        let viewport_height: f32 = 2.0;
-        let viewport_width: f32 =
-            viewport_height * (self.image_width as f32 / self.image_height as f32);
-        let viewport_u = Vector3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vector3::new(0.0, -viewport_height, 0.0);
-        self.pixel_delta_u = viewport_u / (self.image_width as f32);
-        self.pixel_delta_v = viewport_v / (self.image_height as f32);
-        let viewport_u = Vector3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vector3::new(0.0, -viewport_height, 0.0);
-        let viewport_upper_left = self.center
-            - Vector3::new(0.0, 0.0, focal_length)
-            - viewport_u / 2.0
-            - viewport_v / 2.0;
-        self.pixel00loc = viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
+    fn sample_square() -> Vector3<f32> {
+        Vector3::new(
+            rand::rng().random_range(0.0..1.0) - 0.5,
+            rand::rng().random_range(0.0..1.0) - 0.5,
+            0.0,
+        )
+    }
+    fn get_ray(&self, i: i32, j: i32) -> Ray {
+        let offset = Camera::sample_square();
+        let pixel_sample = self.pixel00loc
+            + ((i as f32 + offset.x) * self.pixel_delta_u)
+            + ((j as f32 + offset.y) * self.pixel_delta_v);
+        let ray_origin = self.center;
+        let ray_direction = pixel_sample - ray_origin;
+        return Ray::new(ray_origin, ray_direction);
     }
 }
 
