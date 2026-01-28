@@ -328,6 +328,15 @@ impl Interval {
     pub fn new_by_value(min: f32, max: f32) -> Interval {
         Interval { min: min, max: max }
     }
+    pub fn clamp(&self, value: f32) -> f32 {
+        if value < self.min {
+            return self.min;
+        } else if value > self.max {
+            return self.max;
+        } else {
+            return value;
+        }
+    }
 
     pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Interval [min:{}, max:{}]\n", self.min, self.max)

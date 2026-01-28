@@ -1,4 +1,5 @@
 use nalgebra::Vector3;
+use rand::{Rng, rng, rngs::ThreadRng};
 
 use crate::structures::{Camera, Sphere, World};
 mod aux_fn;
@@ -6,7 +7,9 @@ mod structures;
 
 fn main() {
     let ar_new: f32 = 16.0 / 9.0;
-    let iw_new = 400;
+    let coef_rnd = rng().random_range(0.0..1.0);
+    let addition = 200.0 * coef_rnd;
+    let iw_new = 400 + addition as i32;
     let mut cam1 = Camera::new(ar_new, iw_new);
 
     let p3 = Vector3::new(0.0, 0.0, -1.0);
