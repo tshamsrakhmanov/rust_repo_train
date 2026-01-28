@@ -11,7 +11,7 @@ mod structures;
 
 fn main() -> std::io::Result<()> {
     // screen parameters
-    let image_width = 500;
+    let image_width = 400;
     let aspect_ratio: f32 = 16.0 / 9.0;
     let image_height: i32 = ((image_width as f32) / aspect_ratio) as i32;
 

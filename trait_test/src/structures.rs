@@ -1,6 +1,9 @@
 use crate::aux_fn::{is_face_normal, is_point_on_line};
 use nalgebra::Vector3;
-use std::fmt;
+use std::{
+    f32::{INFINITY, NEG_INFINITY},
+    fmt,
+};
 
 /// ********************************************
 /// HitRecord
@@ -355,6 +358,57 @@ impl Hittable for Sphere {
         temp_res
     }
 }
+
+/// ********************************************
+/// INTERVALS
+/// ********************************************
+pub struct Interval {
+    min: f32,
+    max: f32,
+}
+impl fmt::Display for Interval {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
+
+impl Interval {
+    pub fn new_default() -> Interval {
+        Interval {
+            min: INFINITY,
+            max: NEG_INFINITY,
+        }
+    }
+    pub fn new_by_value(min: f32, max: f32) -> Interval {
+        Interval { min: min, max: max }
+    }
+
+    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Interval [min:{}, max:{}]\n", self.min, self.max)
+    }
+    pub fn size(&self) -> f32 {
+        self.max - self.min
+    }
+    pub fn is_contains(&self, x: f32) -> bool {
+        self.min <= x && x <= self.max
+    }
+    pub fn is_surround(&self, x: f32) -> bool {
+        self.min < x && x < self.max
+    }
+    pub fn new_empty() -> Interval {
+        Interval {
+            min: INFINITY,
+            max: NEG_INFINITY,
+        }
+    }
+    pub fn new_universe() -> Interval {
+        Interval {
+            min: NEG_INFINITY,
+            max: INFINITY,
+        }
+    }
+}
+
 /// ********************************************
 /// TRAITS
 /// ********************************************
