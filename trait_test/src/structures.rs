@@ -1,5 +1,7 @@
-use crate::aux_fn::{is_face_normal, is_point_on_line};
+use crate::aux_fn::{is_face_normal, write_pixel};
 use nalgebra::Vector3;
+use std::fs::File;
+use std::io::prelude::*;
 use std::{
     f32::{INFINITY, NEG_INFINITY},
     fmt,
@@ -71,58 +73,6 @@ impl HitRecord {
             normale: normale,
             is_outside: is_outside,
         }
-    }
-}
-
-/// ********************************************
-/// Object
-/// ********************************************
-/// Description of a genereic Object which is consist only of one point in a space.
-pub struct Object {
-    position: Vector3<f32>,
-}
-
-impl fmt::Display for Object {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.logger(f)
-    }
-}
-
-impl fmt::Debug for Object {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.logger(f)
-    }
-}
-
-impl Object {
-    /// Creates an object via given point
-    pub fn new(position: Vector3<f32>) -> Object {
-        Object { position: position }
-    }
-    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let p1 = self.position.x;
-        let p2 = self.position.y;
-        let p3 = self.position.z;
-        let s1 = format!("(x:{}, y:{}, z:{})", p1, p2, p3);
-        write!(f, "Object [point: {}]", s1)
-    }
-}
-
-impl Hittable for Object {
-    fn hit_test(&self, ray: &Ray, int: &Interval) -> HitResultTuple {
-        let mut temp_hitrecord = HitRecord::new_default();
-
-        let result_of_check = is_point_on_line(self.position, ray.origin, ray.direction, 0.001);
-
-        if result_of_check.0 {
-            temp_hitrecord.distance = result_of_check.1;
-            temp_hitrecord.point_of_hit = self.position;
-            let a = HitResultTuple::new(true, temp_hitrecord);
-            return a;
-        }
-
-        let b = HitResultTuple::new(false, temp_hitrecord);
-        return b;
     }
 }
 
@@ -375,12 +325,6 @@ impl fmt::Display for Interval {
 }
 
 impl Interval {
-    pub fn new_default() -> Interval {
-        Interval {
-            min: INFINITY,
-            max: NEG_INFINITY,
-        }
-    }
     pub fn new_by_value(min: f32, max: f32) -> Interval {
         Interval { min: min, max: max }
     }
@@ -397,17 +341,95 @@ impl Interval {
     pub fn is_surround(&self, x: f32) -> bool {
         self.min < x && x < self.max
     }
-    pub fn new_empty() -> Interval {
-        Interval {
-            min: INFINITY,
-            max: NEG_INFINITY,
+}
+
+/// ********************************************
+/// CAMERA
+/// ********************************************
+pub struct Camera {
+    pub aspect_ratio: f32,
+    pub image_width: i32,
+    image_height: i32,
+    center: Vector3<f32>,
+    pixel00loc: Vector3<f32>,
+    pixel_delta_u: Vector3<f32>,
+    pixel_delta_v: Vector3<f32>,
+}
+
+impl Camera {
+    pub fn new(aspect_ratio: f32, image_width: i32) -> Camera {
+        Camera {
+            aspect_ratio: aspect_ratio,
+            image_width: image_width,
+            image_height: 0,
+            center: Vector3::new(0.0, 0.0, 0.0),
+            pixel00loc: Vector3::new(0.0, 0.0, 0.0),
+            pixel_delta_u: Vector3::new(0.0, 0.0, 0.0),
+            pixel_delta_v: Vector3::new(0.0, 0.0, 0.0),
         }
     }
-    pub fn new_universe() -> Interval {
-        Interval {
-            min: NEG_INFINITY,
-            max: INFINITY,
+    pub fn render(&mut self, world: &World) -> std::io::Result<()> {
+        self.initialize();
+
+        let mut file = File::create("pic.ppm")?;
+
+        // write boilerplate of file type e.t.c...
+        write!(file, "{}\n", "P3")?;
+        write!(file, "{} {}\n", self.image_width, self.image_height)?;
+        write!(file, "{}\n", 255)?;
+
+        for y_pos in 0..self.image_height {
+            let a = self.image_height - y_pos;
+            println!("Scan lines remaining: {}", a);
+            for x_pos in 0..self.image_width {
+                let pixel_center = self.pixel00loc
+                    + (x_pos as f32 * self.pixel_delta_u)
+                    + (y_pos as f32 * self.pixel_delta_v);
+                let ray_direction = pixel_center - self.center;
+                let ray1 = Ray::new(self.center, ray_direction);
+                let color = Camera::ray_color(&ray1, &world);
+
+                write_pixel(&mut file, color);
+            }
         }
+
+        Ok(())
+    }
+
+    fn ray_color(ray: &Ray, world: &World) -> Vector3<f32> {
+        // generate test of ray test in world
+        let temp_int = Interval::new_by_value(0.0, INFINITY);
+        let result = world.hit_test(ray, &temp_int);
+        // if hit detected - color the ray in approptirate colors
+        if result.is_hit && result.hit_record.get_distance() > 0.0 {
+            let a = 0.5 * (result.hit_record.get_normale() + Vector3::new(1.0, 1.0, 1.0));
+            return a;
+        }
+
+        // if not hit - just draw background
+        let unit_dicrection = ray.get_direction().normalize();
+        let a = 0.5 * (unit_dicrection.y + 1.0);
+        let bg_color = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
+        return bg_color;
+    }
+    fn initialize(&mut self) {
+        self.image_height = ((self.image_width as f32) / self.aspect_ratio) as i32;
+        self.center = Vector3::new(0.0, 0.0, 0.0);
+        let focal_length: f32 = 1.0;
+        let viewport_height: f32 = 2.0;
+        let viewport_width: f32 =
+            viewport_height * (self.image_width as f32 / self.image_height as f32);
+        let viewport_u = Vector3::new(viewport_width, 0.0, 0.0);
+        let viewport_v = Vector3::new(0.0, -viewport_height, 0.0);
+        self.pixel_delta_u = viewport_u / (self.image_width as f32);
+        self.pixel_delta_v = viewport_v / (self.image_height as f32);
+        let viewport_u = Vector3::new(viewport_width, 0.0, 0.0);
+        let viewport_v = Vector3::new(0.0, -viewport_height, 0.0);
+        let viewport_upper_left = self.center
+            - Vector3::new(0.0, 0.0, focal_length)
+            - viewport_u / 2.0
+            - viewport_v / 2.0;
+        self.pixel00loc = viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 }
 
