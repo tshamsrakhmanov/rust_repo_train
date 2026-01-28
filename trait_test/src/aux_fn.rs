@@ -1,6 +1,6 @@
-use crate::structures::{Hittable, Ray, World};
+use crate::structures::{Hittable, Interval, Ray, World};
 use nalgebra::Vector3;
-use std::f32::INFINITY;
+use std::f32::{INFINITY, NEG_INFINITY};
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -37,9 +37,10 @@ pub fn is_point_on_line(
 
 pub fn ray_color(ray: &Ray, world: &World) -> Vector3<f32> {
     // generate test of ray test in world
-    let result = world.hit_test(ray, 0.0, INFINITY);
+    let temp_int = Interval::new_by_value(0.0, INFINITY);
+    let result = world.hit_test(ray, &temp_int);
     // if hit detected - color the ray in approptirate colors
-    if result.is_hit {
+    if result.is_hit && result.hit_record.get_distance() > 0.0 {
         let a = 0.5 * (result.hit_record.get_normale() + Vector3::new(1.0, 1.0, 1.0));
         return a;
     }

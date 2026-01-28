@@ -109,7 +109,7 @@ impl Object {
 }
 
 impl Hittable for Object {
-    fn hit_test(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple {
+    fn hit_test(&self, ray: &Ray, int: &Interval) -> HitResultTuple {
         let mut temp_hitrecord = HitRecord::new_default();
 
         let result_of_check = is_point_on_line(self.position, ray.origin, ray.direction, 0.001);
@@ -251,15 +251,16 @@ impl World {
 }
 
 impl Hittable for World {
-    fn hit_test(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple {
+    fn hit_test(&self, ray: &Ray, int: &Interval) -> HitResultTuple {
         let mut result = HitResultTuple::new(false, HitRecord::new_default());
-        let mut temp_dist = finish;
+        let mut temp_dist = int.max;
 
         for obj in &self.list_of_objects {
             // println!("Perform test:");
             // println!("{:?}", &ray);
             // println!("{:?}", &obj);
-            let assert_object = obj.hit_test(&ray, start, temp_dist);
+            let temp_int = Interval::new_by_value(int.min, temp_dist);
+            let assert_object = obj.hit_test(&ray, &temp_int);
             if assert_object.is_hit {
                 // println!("YES hit");
                 // println!("record is {} ", assert_object.hit_record);
@@ -315,7 +316,7 @@ impl Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit_test(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple {
+    fn hit_test(&self, ray: &Ray, int: &Interval) -> HitResultTuple {
         let mut temp_res = HitResultTuple::new(false, HitRecord::new_default());
         let oc: Vector3<f32> = self.origin - ray.get_origin();
         let a = ray.get_direction().magnitude().powi(2);
@@ -331,9 +332,10 @@ impl Hittable for Sphere {
         let sqrtd = disc.sqrt();
 
         let mut root = (h - sqrtd) / a;
-        if root <= start || finish <= root {
+
+        if !int.is_surround(root) {
             root = (h + sqrtd) / a;
-            if root <= start || finish <= root {
+            if !int.is_surround(root) {
                 temp_res.is_hit = false;
                 return temp_res;
             }
@@ -414,5 +416,5 @@ impl Interval {
 /// ********************************************
 
 pub trait Hittable {
-    fn hit_test(&self, ray: &Ray, start: f32, finish: f32) -> HitResultTuple;
+    fn hit_test(&self, ray: &Ray, int: &Interval) -> HitResultTuple;
 }
