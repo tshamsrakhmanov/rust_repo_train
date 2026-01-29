@@ -15,11 +15,16 @@ use std::{
 /// ********************************************
 /// Used to describe finitive fact of hit on an object
 /// Provided with discription: where, how, e.t.c.
+/// distance ...
+/// point_of_hit...
+/// normale...
+/// is_outside...
 pub struct HitRecord {
     distance: f32,
     point_of_hit: Vector3<f32>,
     normale: Vector3<f32>,
     is_outside: bool,
+    material: Lambretian,
 }
 
 impl fmt::Display for HitRecord {
@@ -56,6 +61,7 @@ impl HitRecord {
             point_of_hit: Vector3::new(0.0, 0.0, 0.0),
             normale: Vector3::new(0.0, 0.0, 0.0),
             is_outside: false,
+            material: Lambretian::new(Vector3::new(0.0, 0.0, 0.0)),
         }
     }
     pub fn get_normale(&self) -> Vector3<f32> {
@@ -78,6 +84,7 @@ impl HitRecord {
             point_of_hit: point_of_hit,
             normale: normale,
             is_outside: is_outside,
+            material: Lambretian::new(Vector3::new(0.0, 0.0, 0.0)),
         }
     }
 }
@@ -125,7 +132,9 @@ impl HitResultTuple {
 /// ********************************************
 /// RAY struct
 /// ********************************************
-
+/// Represent ray in model
+/// origin...
+/// direciton...
 pub struct Ray {
     origin: Vector3<f32>,
     direction: Vector3<f32>,
@@ -502,11 +511,43 @@ impl Camera {
         return Ray::new(ray_origin, ray_direction);
     }
 }
-
+/// ********************************************
+/// LAMBERTIAN
+/// ********************************************
+// representation of material type - Lambretian
+pub struct Lambretian {
+    albedo: Vector3<f32>,
+}
+impl Lambretian {
+    pub fn new(albedo: Vector3<f32>) -> Lambretian {
+        Lambretian { albedo }
+    }
+}
+impl Material for Lambretian {
+    fn scatter(
+        &self,
+        ray_in: &Ray,
+        hitRecord: &HitRecord,
+        attenuation: Vector3<f32>,
+        ray_scattered: &Ray,
+    ) -> bool {
+        true
+    }
+}
 /// ********************************************
 /// TRAITS
 /// ********************************************
 
 pub trait Hittable {
     fn hit_test(&self, ray: &Ray, int: &Interval) -> HitResultTuple;
+}
+
+pub trait Material {
+    fn scatter(
+        &self,
+        ray_in: &Ray,
+        hitRecord: &HitRecord,
+        attenuation: Vector3<f32>,
+        ray_scattered: &Ray,
+    ) -> bool;
 }
