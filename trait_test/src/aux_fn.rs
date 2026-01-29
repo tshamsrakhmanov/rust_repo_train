@@ -7,17 +7,17 @@ use std::io::prelude::*;
 pub fn write_pixel(file: &mut File, pixel: Vector3<f32>) {
     let int1 = Interval::new_by_value(0.0, 0.999);
 
-    let mut temp_r = pixel.x;
-    let mut temp_g = pixel.y;
-    let mut temp_b = pixel.z;
+    let r = linear_to_gamma(pixel.x);
+    let g = linear_to_gamma(pixel.y);
+    let b = linear_to_gamma(pixel.z);
 
-    temp_r = linear_to_gamma(temp_r);
-    temp_g = linear_to_gamma(temp_g);
-    temp_b = linear_to_gamma(temp_b);
+    // r = linear_to_gamma(r);
+    // g = linear_to_gamma(g);
+    // b = linear_to_gamma(b);
 
-    let ir = (256.0 * int1.clamp(temp_r)) as u8;
-    let ig = (256.0 * int1.clamp(temp_g)) as u8;
-    let ib = (256.0 * int1.clamp(temp_b)) as u8;
+    let ir = (256.0 * int1.clamp(r)) as u8;
+    let ig = (256.0 * int1.clamp(g)) as u8;
+    let ib = (256.0 * int1.clamp(b)) as u8;
 
     let str1 = format!("{} {} {}\n", ir, ig, ib);
     let byt1 = str1.as_bytes();

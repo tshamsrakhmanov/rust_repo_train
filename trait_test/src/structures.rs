@@ -3,6 +3,7 @@ use nalgebra::Vector3;
 use rand::Rng;
 use std::fs::File;
 use std::io::prelude::*;
+use std::time::Duration;
 use std::{
     f32::{INFINITY, NEG_INFINITY},
     fmt,
@@ -416,9 +417,13 @@ impl Camera {
         write!(file, "{} {}\n", self.image_width, self.image_height)?;
         write!(file, "{}\n", 255)?;
 
+        let mut collection_times = vec![];
+        let start_time = std::time::Instant::now();
+
+        let mut buffer_line = String::new();
         for y_pos in 0..self.image_height {
-            let a = self.image_height - y_pos;
-            println!("Scan lines remaining: {}", a);
+            let start_time = std::time::Instant::now();
+            let currunt_line_to_draw = self.image_height - y_pos;
             for x_pos in 0..self.image_width {
                 let mut temp_color = Vector3::new(0.0, 0.0, 0.0);
                 for _ in 0..self.samples_per_pixel {
@@ -429,7 +434,23 @@ impl Camera {
 
                 write_pixel(&mut file, temp_color * self.pixel_sample_scale);
             }
+            let end_time = std::time::Instant::now();
+            let diff_time = end_time - start_time;
+            collection_times.push(diff_time);
+            println!("Line:{}, Time:{:?}", currunt_line_to_draw, diff_time);
         }
+
+        collection_times.sort();
+        let len_collection = collection_times.len();
+        let ninety = (len_collection as f32 * 0.9) as usize;
+
+        let end_time = std::time::Instant::now();
+        let diff_time = end_time - start_time;
+        let time_per_line = diff_time / self.image_height as u32;
+        println!("---");
+        println!("Total render time: {:?}", diff_time);
+        println!("Avg.time per line: {:?}", time_per_line);
+        println!("90pct:             {:?}", collection_times[ninety]);
 
         Ok(())
     }
