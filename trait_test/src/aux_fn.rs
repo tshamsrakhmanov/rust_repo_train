@@ -1,10 +1,8 @@
 use crate::structures::{Interval, Ray};
 use nalgebra::Vector3;
 use rand::Rng;
-use std::fs::File;
-use std::io::prelude::*;
 
-pub fn write_pixel(file: &mut File, pixel: Vector3<f32>) {
+pub fn write_pixel(pixel: Vector3<f32>) -> String {
     let int1 = Interval::new_by_value(0.0, 0.999);
 
     let r = linear_to_gamma(pixel.x);
@@ -20,8 +18,7 @@ pub fn write_pixel(file: &mut File, pixel: Vector3<f32>) {
     let ib = (256.0 * int1.clamp(b)) as u8;
 
     let str1 = format!("{} {} {}\n", ir, ig, ib);
-    let byt1 = str1.as_bytes();
-    let _ = file.write(byt1);
+    str1
 }
 
 pub fn is_face_normal(ray: &Ray, outward_normal_unit: Vector3<f32>) -> (bool, Vector3<f32>) {

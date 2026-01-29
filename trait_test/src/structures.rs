@@ -3,7 +3,6 @@ use nalgebra::Vector3;
 use rand::Rng;
 use std::fs::File;
 use std::io::prelude::*;
-use std::time::Duration;
 use std::{
     f32::{INFINITY, NEG_INFINITY},
     fmt,
@@ -371,7 +370,6 @@ pub struct Camera {
     samples_per_pixel: u8,
     pixel_sample_scale: f32,
     max_depth: u8,
-    gamma: f32,
 }
 
 impl Camera {
@@ -380,7 +378,6 @@ impl Camera {
         let image_height = ((image_width as f32) / aspect_ratio) as i32;
         let center = Vector3::new(0.0, 0.0, 0.0);
         let max_depth = 10;
-        let gamma = 0.1;
 
         let focal_length: f32 = 1.0;
         let viewport_height: f32 = 2.0;
@@ -406,7 +403,6 @@ impl Camera {
             samples_per_pixel: samples_per_pixel,
             pixel_sample_scale: pixel_sample_scale,
             max_depth: max_depth,
-            gamma: gamma,
         }
     }
     pub fn render(&self, world: &World) -> std::io::Result<()> {
@@ -432,13 +428,17 @@ impl Camera {
                     temp_color = temp_color + new_color;
                 }
 
-                write_pixel(&mut file, temp_color * self.pixel_sample_scale);
+                let p = write_pixel(temp_color * self.pixel_sample_scale);
+                buffer_line.push_str(&p);
             }
             let end_time = std::time::Instant::now();
             let diff_time = end_time - start_time;
             collection_times.push(diff_time);
-            println!("Line:{}, Time:{:?}", currunt_line_to_draw, diff_time);
+            // println!("Line:{}, Time:{:?}", currunt_line_to_draw, diff_time);
         }
+
+        let bytes = buffer_line.as_bytes();
+        file.write(bytes)?;
 
         collection_times.sort();
         let len_collection = collection_times.len();
@@ -448,6 +448,7 @@ impl Camera {
         let diff_time = end_time - start_time;
         let time_per_line = diff_time / self.image_height as u32;
         println!("---");
+        println!("--------------");
         println!("Total render time: {:?}", diff_time);
         println!("Avg.time per line: {:?}", time_per_line);
         println!("90pct:             {:?}", collection_times[ninety]);
