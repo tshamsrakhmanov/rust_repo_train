@@ -369,13 +369,13 @@ pub struct Camera {
     pixel00loc: Vector3<f32>,
     pixel_delta_u: Vector3<f32>,
     pixel_delta_v: Vector3<f32>,
-    samples_per_pixel: u8,
+    samples_per_pixel: i32,
     pixel_sample_scale: f32,
     max_depth: u8,
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f32, image_width: i32, samples_per_pixel: u8) -> Camera {
+    pub fn new(aspect_ratio: f32, image_width: i32, samples_per_pixel: i32) -> Camera {
         let pixel_sample_scale = 1.0 / samples_per_pixel as f32;
         let image_height = ((image_width as f32) / aspect_ratio) as i32;
         let center = Vector3::new(0.0, 0.0, 0.0);

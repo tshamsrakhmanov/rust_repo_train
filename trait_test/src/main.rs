@@ -5,8 +5,8 @@ mod structures;
 
 fn main() {
     let aspect_ratio: f32 = 16.0 / 9.0;
-    let image_width = 600;
-    let sample_per_pixel = 100;
+    let image_width = 400;
+    let sample_per_pixel: i32 = 50;
 
     let cam1 = Camera::new(aspect_ratio, image_width, sample_per_pixel);
 
