@@ -1,6 +1,8 @@
 use crate::aux_fn::{is_face_normal, random_on_hemisphere, random_unit_vector, write_pixel};
+use chrono::{DateTime, Utc};
 use nalgebra::Vector3;
 use rand::Rng;
+use std::f32::consts::E;
 use std::fs::File;
 use std::io::prelude::*;
 use std::{
@@ -406,7 +408,10 @@ impl Camera {
         }
     }
     pub fn render(&self, world: &World) -> std::io::Result<()> {
-        let mut file = File::create("pic.ppm")?;
+        // let random1 = rand::rng().random_range(0..100000);
+        let now_utc: DateTime<Utc> = Utc::now();
+        let date_str = format!("{:?}.ppm", now_utc);
+        let mut file = File::create(date_str)?;
 
         // write boilerplate of file type e.t.c...
         write!(file, "{}\n", "P3")?;
@@ -434,7 +439,7 @@ impl Camera {
             let end_time = std::time::Instant::now();
             let diff_time = end_time - start_time;
             collection_times.push(diff_time);
-            // println!("Line:{}, Time:{:?}", currunt_line_to_draw, diff_time);
+            println!("Line:{}, Time:{:?}", currunt_line_to_draw, diff_time);
         }
 
         let bytes = buffer_line.as_bytes();
