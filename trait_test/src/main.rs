@@ -4,11 +4,11 @@ mod aux_fn;
 mod structures;
 
 fn main() {
-    let ar_new: f32 = 16.0 / 9.0;
-    let iw_new = 400;
-    let smpl = 1;
+    let aspect_ratio: f32 = 16.0 / 9.0;
+    let image_width = 1000;
+    let sample_per_pixel = 50;
 
-    let mut cam1 = Camera::new(ar_new, iw_new, smpl);
+    let cam1 = Camera::new(aspect_ratio, image_width, sample_per_pixel);
 
     let p3 = Vector3::new(0.0, 0.0, -1.0);
     let r3: f32 = 0.5;

@@ -1,4 +1,4 @@
-use crate::aux_fn::{is_face_normal, write_pixel};
+use crate::aux_fn::{is_face_normal, random_on_hemisphere, random_unit_vector, write_pixel};
 use nalgebra::Vector3;
 use rand::Rng;
 use std::fs::File;
@@ -61,6 +61,9 @@ impl HitRecord {
     }
     pub fn get_distance(&self) -> f32 {
         self.distance
+    }
+    pub fn get_point_of_hit(&self) -> Vector3<f32> {
+        self.point_of_hit
     }
     pub fn _new(
         distance: f32,
@@ -366,6 +369,8 @@ pub struct Camera {
     pixel_delta_v: Vector3<f32>,
     samples_per_pixel: u8,
     pixel_sample_scale: f32,
+    max_depth: u8,
+    gamma: f32,
 }
 
 impl Camera {
@@ -373,6 +378,8 @@ impl Camera {
         let pixel_sample_scale = 1.0 / samples_per_pixel as f32;
         let image_height = ((image_width as f32) / aspect_ratio) as i32;
         let center = Vector3::new(0.0, 0.0, 0.0);
+        let max_depth = 10;
+        let gamma = 0.1;
 
         let focal_length: f32 = 1.0;
         let viewport_height: f32 = 2.0;
@@ -397,9 +404,11 @@ impl Camera {
             pixel_delta_v: pixel_delta_v,
             samples_per_pixel: samples_per_pixel,
             pixel_sample_scale: pixel_sample_scale,
+            max_depth: max_depth,
+            gamma: gamma,
         }
     }
-    pub fn render(&mut self, world: &World) -> std::io::Result<()> {
+    pub fn render(&self, world: &World) -> std::io::Result<()> {
         let mut file = File::create("pic.ppm")?;
 
         // write boilerplate of file type e.t.c...
@@ -414,7 +423,7 @@ impl Camera {
                 let mut temp_color = Vector3::new(0.0, 0.0, 0.0);
                 for _ in 0..self.samples_per_pixel {
                     let temp_ray = Camera::get_ray(&self, x_pos, y_pos);
-                    let new_color = Camera::ray_color(&temp_ray, world);
+                    let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
                     temp_color = temp_color + new_color;
                 }
 
@@ -425,14 +434,22 @@ impl Camera {
         Ok(())
     }
 
-    fn ray_color(ray: &Ray, world: &World) -> Vector3<f32> {
+    fn ray_color(ray: &Ray, depth: u8, world: &World) -> Vector3<f32> {
+        if depth <= 0 {
+            return Vector3::new(0.0, 0.0, 0.0);
+        }
         // generate test of ray test in world
-        let temp_int = Interval::new_by_value(0.0, INFINITY);
+        let temp_int = Interval::new_by_value(0.001, INFINITY);
         let result = world.hit_test(ray, &temp_int);
+
         // if hit detected - color the ray in approptirate colors
         if result.is_hit && result.hit_record.get_distance() > 0.0 {
-            let a = 0.5 * (result.hit_record.get_normale() + Vector3::new(1.0, 1.0, 1.0));
-            return a;
+            // basic implementation to draw spheres as normales map
+            // let a = 0.5 * (result.hit_record.get_normale() + Vector3::new(1.0, 1.0, 1.0));
+            // return a;
+            let dir = random_on_hemisphere(result.hit_record.get_normale()) + random_unit_vector();
+            let temp_ray = Ray::new(result.hit_record.get_point_of_hit(), dir);
+            return 0.5 * Camera::ray_color(&temp_ray, depth - 1, world);
         }
 
         // if not hit - just draw background
