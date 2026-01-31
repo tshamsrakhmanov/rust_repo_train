@@ -5,6 +5,7 @@ use rand::Rng;
 use std::f32::consts::E;
 use std::fs::File;
 use std::io::prelude::*;
+use std::thread;
 use std::{
     f32::{INFINITY, NEG_INFINITY},
     fmt,
@@ -427,10 +428,103 @@ impl Camera {
         write!(file, "{} {}\n", self.image_width, self.image_height)?;
         write!(file, "{}\n", 255)?;
 
-        let mut collection_times = vec![];
+        // let mut collection_times: Vec = vec![];
         let start_time = std::time::Instant::now();
-
         let mut buffer_line = String::new();
+
+        let thread1 = thread::scope(|a| {
+            let mut buffer_line = String::new();
+            for y_pos in 0..self.image_height / 2 {
+                for x_pos in 0..self.image_width {
+                    let mut temp_color = Vector3::new(0.0, 0.0, 0.0);
+                    for _ in 0..100 {
+                        let temp_ray = self.get_ray(x_pos, y_pos);
+                        let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
+                        temp_color = temp_color + new_color;
+                    }
+                    let p = write_pixel(temp_color * self.pixel_sample_scale);
+                    buffer_line.push_str(&p);
+                    println!("THRD1: line{} ready", y_pos)
+                }
+            }
+            buffer_line
+        });
+
+        let thread2 = thread::scope(|a| {
+            let mut buffer_line = String::new();
+            for y_pos in self.image_height / 2..self.image_height {
+                for x_pos in 0..self.image_width {
+                    let mut temp_color = Vector3::new(0.0, 0.0, 0.0);
+                    for _ in 0..100 {
+                        let temp_ray = self.get_ray(x_pos, y_pos);
+                        let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
+                        temp_color = temp_color + new_color;
+                    }
+                    let p = write_pixel(temp_color * self.pixel_sample_scale);
+                    buffer_line.push_str(&p);
+                    println!("THRD2: line{} ready", y_pos)
+                }
+            }
+            buffer_line
+        });
+
+        buffer_line.push_str(&thread1);
+        buffer_line.push_str(&thread2);
+
+        let bytes = buffer_line.as_bytes();
+        file.write(bytes)?;
+
+        // let mut buffer_line = String::new();
+        //
+        // for y_pos in 0..self.image_height {
+        //     let start_time = std::time::Instant::now();
+        //     let currunt_line_to_draw = self.image_height - y_pos;
+        //     for x_pos in 0..self.image_width {
+        //         let mut temp_color = Vector3::new(0.0, 0.0, 0.0);
+        //         for _ in 0..self.samples_per_pixel {
+        //             let temp_ray = Camera::get_ray(&self, x_pos, y_pos);
+        //             let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
+        //             temp_color = temp_color + new_color;
+        //         }
+        //
+        //         let p = write_pixel(temp_color * self.pixel_sample_scale);
+        //         buffer_line.push_str(&p);
+        //     }
+        //     let end_time = std::time::Instant::now();
+        //     let diff_time = end_time - start_time;
+        //     collection_times.push(diff_time);
+        //     println!("Line:{}, Time:{:?}", currunt_line_to_draw, diff_time);
+        // }
+        //
+        // let bytes = buffer_line.as_bytes();
+        // file.write(bytes)?;
+        //
+        // collection_times.sort();
+        // let len_collection = collection_times.len();
+        // let ninety = (len_collection as f32 * 0.9) as usize;
+        //
+        let end_time = std::time::Instant::now();
+        let diff_time = end_time - start_time;
+        let time_per_line = diff_time / self.image_height as u32;
+        println!("---");
+        println!("--------------");
+        println!("Total render time: {:?}", diff_time);
+        println!("Avg.time per line: {:?}", time_per_line);
+        // println!("90pct:             {:?}", collection_times[ninety]);
+        println!("--------------");
+        println!(
+            "X:{:?}, Y:{:?}, RAYS:{:?}",
+            self.get_image_width(),
+            self.get_image_heigth(),
+            self.get_samples_per_pixel()
+        );
+
+        Ok(())
+    }
+
+    fn charge_pixel(&self, world: &World) -> String {
+        let mut buffer_line = String::new();
+
         for y_pos in 0..self.image_height {
             let start_time = std::time::Instant::now();
             let currunt_line_to_draw = self.image_height - y_pos;
@@ -445,29 +539,8 @@ impl Camera {
                 let p = write_pixel(temp_color * self.pixel_sample_scale);
                 buffer_line.push_str(&p);
             }
-            let end_time = std::time::Instant::now();
-            let diff_time = end_time - start_time;
-            collection_times.push(diff_time);
-            println!("Line:{}, Time:{:?}", currunt_line_to_draw, diff_time);
         }
-
-        let bytes = buffer_line.as_bytes();
-        file.write(bytes)?;
-
-        collection_times.sort();
-        let len_collection = collection_times.len();
-        let ninety = (len_collection as f32 * 0.9) as usize;
-
-        let end_time = std::time::Instant::now();
-        let diff_time = end_time - start_time;
-        let time_per_line = diff_time / self.image_height as u32;
-        println!("---");
-        println!("--------------");
-        println!("Total render time: {:?}", diff_time);
-        println!("Avg.time per line: {:?}", time_per_line);
-        println!("90pct:             {:?}", collection_times[ninety]);
-
-        Ok(())
+        buffer_line
     }
 
     fn ray_color(ray: &Ray, depth: u8, world: &World) -> Vector3<f32> {
@@ -501,7 +574,7 @@ impl Camera {
             0.0,
         )
     }
-    fn get_ray(&self, i: i32, j: i32) -> Ray {
+    pub fn get_ray(&self, i: i32, j: i32) -> Ray {
         let offset = Camera::sample_square();
         let pixel_sample = self.pixel00loc
             + ((i as f32 + offset.x) * self.pixel_delta_u)
@@ -509,6 +582,15 @@ impl Camera {
         let ray_origin = self.center;
         let ray_direction = pixel_sample - ray_origin;
         return Ray::new(ray_origin, ray_direction);
+    }
+    fn get_image_width(&self) -> i32 {
+        self.image_width
+    }
+    fn get_image_heigth(&self) -> i32 {
+        self.image_height
+    }
+    fn get_samples_per_pixel(&self) -> i32 {
+        self.samples_per_pixel
     }
 }
 /// ********************************************
@@ -550,4 +632,32 @@ pub trait Material {
         attenuation: Vector3<f32>,
         ray_scattered: &Ray,
     ) -> bool;
+}
+
+/// spec functions
+///
+///
+fn ray_color(ray: &Ray, depth: u8, world: &World) -> Vector3<f32> {
+    if depth <= 0 {
+        return Vector3::new(0.0, 0.0, 0.0);
+    }
+    // generate test of ray test in world
+    let temp_int = Interval::new_by_value(0.001, INFINITY);
+    let result = world.hit_test(ray, &temp_int);
+
+    // if hit detected - color the ray in approptirate colors
+    if result.is_hit && result.hit_record.get_distance() > 0.0 {
+        // basic implementation to draw spheres as normales map
+        // let a = 0.5 * (result.hit_record.get_normale() + Vector3::new(1.0, 1.0, 1.0));
+        // return a;
+        let dir = random_on_hemisphere(result.hit_record.get_normale()) + random_unit_vector();
+        let temp_ray = Ray::new(result.hit_record.get_point_of_hit(), dir);
+        return 0.5 * Camera::ray_color(&temp_ray, depth - 1, world);
+    }
+
+    // if not hit - just draw background
+    let unit_dicrection = ray.get_direction().normalize();
+    let a = 0.5 * (unit_dicrection.y + 1.0);
+    let bg_color = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
+    return bg_color;
 }
