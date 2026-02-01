@@ -2,6 +2,7 @@ use crate::aux_fn::{is_face_normal, random_on_hemisphere, random_unit_vector, wr
 use chrono::{DateTime, Utc};
 use nalgebra::Vector3;
 use rand::Rng;
+use rayon::prelude::*;
 use std::fs::File;
 use std::io::prelude::*;
 use std::thread;
@@ -496,6 +497,38 @@ impl Camera {
         );
 
         Ok(())
+    }
+
+    fn multi_thread_rendering(
+        &self,
+        slices: Vec<(u16, u16)>,
+        world: &World,
+    ) -> Vec<(usize, String)> {
+        slices
+            .into_par_iter()
+            .enumerate()
+            .map(|(idx, single_slice)| {
+                let result = (idx, self.single_thread_rendering(single_slice, world));
+                result
+            })
+            .collect()
+    }
+
+    fn single_thread_rendering(&self, slice: (u16, u16), world: &World) -> String {
+        let mut buffer_line = String::new();
+        for y_pos in slice.0..slice.1 {
+            for x_pos in 0..self.image_width {
+                let mut temp_color = Vector3::new(0.0, 0.0, 0.0);
+                for _ in 0..100 {
+                    let temp_ray = self.get_ray(x_pos, y_pos as i32);
+                    let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
+                    temp_color = temp_color + new_color;
+                }
+                let p = write_pixel(temp_color * self.pixel_sample_scale);
+                buffer_line.push_str(&p);
+            }
+        }
+        buffer_line
     }
 
     fn slices_preparation(&self) -> Vec<(u16, u16)> {
