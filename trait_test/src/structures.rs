@@ -481,15 +481,17 @@ impl Camera {
 
         // debug info at the end to terminal
         println!("--------------");
-        println!("Total render time: {:?}", diff_time);
-        println!("--------------");
+        println!("Total render time: {:?} sec", diff_time);
         println!(
             "X:{:?}, Y:{:?}, RAYS:{:?}",
             self.get_image_width(),
             self.get_image_heigth(),
             self.get_samples_per_pixel()
         );
+        println!("--------------");
+        println!("Filename:");
         println!("{}", &file_name);
+        println!("--------------");
 
         Ok(())
     }
