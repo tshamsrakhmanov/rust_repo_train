@@ -422,60 +422,43 @@ impl Camera {
             rendering_slices: rend_slices,
         }
     }
+
+    /// Main function to call for a draw
     pub fn render(&self, world: &World) -> std::io::Result<()> {
-        // let now_utc: DateTime<Utc> = Utc::now();
-        // let file_string = format!(
-        //     "{}x{}@{}",
-        //     self.image_width, self.image_height, self.samples_per_pixel
-        // );
-        // let date_str = format!("{:?}.ppm", now_utc);
-        // let mut file = File::create(date_str)?;
-        //
-        // // write boilerplate of file type e.t.c...
-        // write!(file, "{}\n", "P3")?;
-        // write!(file, "{} {}\n", self.image_width, self.image_height)?;
-        // write!(file, "{}\n", 255)?;
-        //
+        // start the clock
         let start_time = std::time::Instant::now();
-        let mut buffer_line = String::new();
 
         // section image by height and make slices out of it
+        // prepare buffer line to fill up in multi_thread_rendering
         let slices = self.slices_preparation();
+        let mut buffer_line = String::new();
 
+        // generate indexed sub-results as outcome of multi_thread_rendering
+        // and push it to buffer
         for pos in self.multi_thread_rendering(slices, world) {
             buffer_line.push_str(&pos.1);
         }
 
-        // let bytes = buffer_line.as_bytes();
-        // file.write(bytes)?;
-
+        // stop the clock
         let end_time = std::time::Instant::now();
         let diff_time = (end_time - start_time).as_secs();
-        // println!("--------------");
-        // println!("Total render time: {:?}", diff_time);
-        // println!("--------------");
-        // println!(
-        //     "X:{:?}, Y:{:?}, RAYS:{:?}",
-        //     self.get_image_width(),
-        //     self.get_image_heigth(),
-        //     self.get_samples_per_pixel()
-        // );
 
-        // file write create
+        // prep of file_name
         let formatted_time = format!("{}", Local::now().format("%d_%m_%Y_%H:%M:%S"));
         let file_name = format!(
             "{}@{}x{}@{}rays@{}sec.ppm",
             formatted_time, self.image_width, self.image_height, self.samples_per_pixel, diff_time
         );
-        // let date_str = format!("{}.ppm", render_details);
+
+        // create file
         let mut file = File::create(&file_name)?;
 
-        // write boilerplate of file type e.t.c...
+        // write boilerplate of PPM standard
         write!(file, "{}\n", "P3")?;
         write!(file, "{} {}\n", self.image_width, self.image_height)?;
         write!(file, "{}\n", 255)?;
 
-        // write reslut of the program
+        // write reslut of the render
         let bytes = buffer_line.as_bytes();
         file.write(bytes)?;
 
@@ -496,6 +479,7 @@ impl Camera {
         Ok(())
     }
 
+    /// God forbid you to understand what it is...
     fn multi_thread_rendering(
         &self,
         slices: Vec<(u16, u16)>,
@@ -511,6 +495,7 @@ impl Camera {
             .collect()
     }
 
+    /// Declaration of single thread for later use
     fn single_thread_rendering(&self, slice: (u16, u16), world: &World) -> String {
         let mut buffer_line = String::new();
         for y_pos in slice.0..slice.1 {
@@ -528,6 +513,9 @@ impl Camera {
         buffer_line
     }
 
+    /// Gives back Vec of image slices by height
+    ///
+    /// Used in multi_thread_rendering
     fn slices_preparation(&self) -> Vec<(u16, u16)> {
         // once more lets make rendering slices...
         // for fucks sake - why i didn't save'd it to stash last time....(
@@ -550,27 +538,9 @@ impl Camera {
         slices
     }
 
-    fn charge_pixel(&self, world: &World) -> String {
-        let mut buffer_line = String::new();
-
-        for y_pos in 0..self.image_height {
-            let start_time = std::time::Instant::now();
-            let currunt_line_to_draw = self.image_height - y_pos;
-            for x_pos in 0..self.image_width {
-                let mut temp_color = Vector3::new(0.0, 0.0, 0.0);
-                for _ in 0..self.samples_per_pixel {
-                    let temp_ray = Camera::get_ray(&self, x_pos, y_pos);
-                    let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
-                    temp_color = temp_color + new_color;
-                }
-
-                let p = write_pixel(temp_color * self.pixel_sample_scale);
-                buffer_line.push_str(&p);
-            }
-        }
-        buffer_line
-    }
-
+    /// Sends given Ray into the world and gives back a color to draw
+    ///
+    /// Uses fallback (backgroung) and main (some object) colors
     fn ray_color(ray: &Ray, depth: u8, world: &World) -> Vector3<f32> {
         if depth <= 0 {
             return Vector3::new(0.0, 0.0, 0.0);
@@ -595,6 +565,7 @@ impl Camera {
         let bg_color = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
         return bg_color;
     }
+    /// Gives randomized vector3 in -0.5...+0.5 in XY plane
     fn sample_square() -> Vector3<f32> {
         Vector3::new(
             rand::rng().random_range(0.0..1.0) - 0.5,
@@ -602,6 +573,12 @@ impl Camera {
             0.0,
         )
     }
+    /// Generates Rat by random offset from fn sample_square
+    /// Given ray originates from camera center and directed
+    /// to random area aroud pixel on final image
+    ///
+    /// This function is used to generate random rays
+    /// ...and by high order it used ALOT
     pub fn get_ray(&self, i: i32, j: i32) -> Ray {
         let offset = Camera::sample_square();
         let pixel_sample = self.pixel00loc
