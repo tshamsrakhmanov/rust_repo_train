@@ -1,8 +1,9 @@
 use crate::aux_fn::{is_face_normal, random_on_hemisphere, random_unit_vector, write_pixel};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local, TimeZone, Utc};
 use nalgebra::Vector3;
 use rand::Rng;
 use rayon::prelude::*;
+use std::fmt::format;
 use std::fs::File;
 use std::io::prelude::*;
 use std::thread;
@@ -422,17 +423,19 @@ impl Camera {
         }
     }
     pub fn render(&self, world: &World) -> std::io::Result<()> {
-        // let random1 = rand::rng().random_range(0..100000);
-        let now_utc: DateTime<Utc> = Utc::now();
-        let date_str = format!("{:?}.ppm", now_utc);
-        let mut file = File::create(date_str)?;
-
-        // write boilerplate of file type e.t.c...
-        write!(file, "{}\n", "P3")?;
-        write!(file, "{} {}\n", self.image_width, self.image_height)?;
-        write!(file, "{}\n", 255)?;
-
-        // let mut collection_times: Vec = vec![];
+        // let now_utc: DateTime<Utc> = Utc::now();
+        // let file_string = format!(
+        //     "{}x{}@{}",
+        //     self.image_width, self.image_height, self.samples_per_pixel
+        // );
+        // let date_str = format!("{:?}.ppm", now_utc);
+        // let mut file = File::create(date_str)?;
+        //
+        // // write boilerplate of file type e.t.c...
+        // write!(file, "{}\n", "P3")?;
+        // write!(file, "{} {}\n", self.image_width, self.image_height)?;
+        // write!(file, "{}\n", 255)?;
+        //
         let start_time = std::time::Instant::now();
         let mut buffer_line = String::new();
 
@@ -443,16 +446,42 @@ impl Camera {
             buffer_line.push_str(&pos.1);
         }
 
+        // let bytes = buffer_line.as_bytes();
+        // file.write(bytes)?;
+
+        let end_time = std::time::Instant::now();
+        let diff_time = (end_time - start_time).as_secs();
+        // println!("--------------");
+        // println!("Total render time: {:?}", diff_time);
+        // println!("--------------");
+        // println!(
+        //     "X:{:?}, Y:{:?}, RAYS:{:?}",
+        //     self.get_image_width(),
+        //     self.get_image_heigth(),
+        //     self.get_samples_per_pixel()
+        // );
+
+        // file write create
+        let formatted_time = format!("{}", Local::now().format("%d_%m_%Y_%H:%M:%S"));
+        let file_name = format!(
+            "{}@{}x{}@{}rays@{}sec.ppm",
+            formatted_time, self.image_width, self.image_height, self.samples_per_pixel, diff_time
+        );
+        // let date_str = format!("{}.ppm", render_details);
+        let mut file = File::create(&file_name)?;
+
+        // write boilerplate of file type e.t.c...
+        write!(file, "{}\n", "P3")?;
+        write!(file, "{} {}\n", self.image_width, self.image_height)?;
+        write!(file, "{}\n", 255)?;
+
+        // write reslut of the program
         let bytes = buffer_line.as_bytes();
         file.write(bytes)?;
 
-        let end_time = std::time::Instant::now();
-        let diff_time = end_time - start_time;
-        let time_per_line = diff_time / self.image_height as u32;
+        // debug info at the end to terminal
         println!("--------------");
         println!("Total render time: {:?}", diff_time);
-        println!("Avg.time per line: {:?}", time_per_line);
-        // println!("90pct:             {:?}", collection_times[ninety]);
         println!("--------------");
         println!(
             "X:{:?}, Y:{:?}, RAYS:{:?}",
@@ -460,6 +489,7 @@ impl Camera {
             self.get_image_heigth(),
             self.get_samples_per_pixel()
         );
+        println!("{}", &file_name);
 
         Ok(())
     }
