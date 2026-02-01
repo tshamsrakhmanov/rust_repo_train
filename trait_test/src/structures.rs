@@ -392,7 +392,7 @@ impl Camera {
         let image_height = ((image_width as f32) / aspect_ratio) as i32;
         let center = Vector3::new(0.0, 0.0, 0.0);
         let max_depth = 10;
-        let rend_slices = 10;
+        let rend_slices = 100;
 
         let focal_length: f32 = 1.0;
         let viewport_height: f32 = 2.0;
@@ -436,46 +436,12 @@ impl Camera {
         let start_time = std::time::Instant::now();
         let mut buffer_line = String::new();
 
+        // section image by height and make slices out of it
         let slices = self.slices_preparation();
-        println!("{slices:?}");
-        thread::sleep(Duration::from_secs(60));
 
-        let thread1 = thread::scope(|a| {
-            let mut buffer_line = String::new();
-            for y_pos in 0..self.image_height / 2 {
-                for x_pos in 0..self.image_width {
-                    let mut temp_color = Vector3::new(0.0, 0.0, 0.0);
-                    for _ in 0..100 {
-                        let temp_ray = self.get_ray(x_pos, y_pos);
-                        let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
-                        temp_color = temp_color + new_color;
-                    }
-                    let p = write_pixel(temp_color * self.pixel_sample_scale);
-                    buffer_line.push_str(&p);
-                }
-            }
-            buffer_line
-        });
-
-        let thread2 = thread::scope(|a| {
-            let mut buffer_line = String::new();
-            for y_pos in self.image_height / 2..self.image_height {
-                for x_pos in 0..self.image_width {
-                    let mut temp_color = Vector3::new(0.0, 0.0, 0.0);
-                    for _ in 0..100 {
-                        let temp_ray = self.get_ray(x_pos, y_pos);
-                        let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
-                        temp_color = temp_color + new_color;
-                    }
-                    let p = write_pixel(temp_color * self.pixel_sample_scale);
-                    buffer_line.push_str(&p);
-                }
-            }
-            buffer_line
-        });
-
-        buffer_line.push_str(&thread1);
-        buffer_line.push_str(&thread2);
+        for pos in self.multi_thread_rendering(slices, world) {
+            buffer_line.push_str(&pos.1);
+        }
 
         let bytes = buffer_line.as_bytes();
         file.write(bytes)?;
@@ -483,7 +449,6 @@ impl Camera {
         let end_time = std::time::Instant::now();
         let diff_time = end_time - start_time;
         let time_per_line = diff_time / self.image_height as u32;
-        println!("---");
         println!("--------------");
         println!("Total render time: {:?}", diff_time);
         println!("Avg.time per line: {:?}", time_per_line);
@@ -543,7 +508,7 @@ impl Camera {
             let temp_slice = base + step;
             if temp_slice < self.image_height as u16 {
                 slices.push((base, temp_slice));
-                base = temp_slice + 1;
+                base = temp_slice;
             } else if temp_slice >= self.image_height as u16 {
                 slices.push((base, self.image_height as u16));
                 break;
