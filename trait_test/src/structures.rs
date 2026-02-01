@@ -5,6 +5,7 @@ use rand::Rng;
 use std::fs::File;
 use std::io::prelude::*;
 use std::thread;
+use std::time::Duration;
 use std::{
     f32::{INFINITY, NEG_INFINITY},
     fmt,
@@ -381,6 +382,7 @@ pub struct Camera {
     samples_per_pixel: i32,
     pixel_sample_scale: f32,
     max_depth: u8,
+    rendering_slices: u8,
 }
 
 impl Camera {
@@ -389,6 +391,7 @@ impl Camera {
         let image_height = ((image_width as f32) / aspect_ratio) as i32;
         let center = Vector3::new(0.0, 0.0, 0.0);
         let max_depth = 10;
+        let rend_slices = 10;
 
         let focal_length: f32 = 1.0;
         let viewport_height: f32 = 2.0;
@@ -414,6 +417,7 @@ impl Camera {
             samples_per_pixel: samples_per_pixel,
             pixel_sample_scale: pixel_sample_scale,
             max_depth: max_depth,
+            rendering_slices: rend_slices,
         }
     }
     pub fn render(&self, world: &World) -> std::io::Result<()> {
@@ -430,6 +434,10 @@ impl Camera {
         // let mut collection_times: Vec = vec![];
         let start_time = std::time::Instant::now();
         let mut buffer_line = String::new();
+
+        let slices = self.slices_preparation();
+        println!("{slices:?}");
+        thread::sleep(Duration::from_secs(60));
 
         let thread1 = thread::scope(|a| {
             let mut buffer_line = String::new();
@@ -488,6 +496,28 @@ impl Camera {
         );
 
         Ok(())
+    }
+
+    fn slices_preparation(&self) -> Vec<(u16, u16)> {
+        // once more lets make rendering slices...
+        // for fucks sake - why i didn't save'd it to stash last time....(
+
+        let mut base = 0;
+        let step = (self.image_height / self.rendering_slices as i32) as u16;
+        let mut slices: Vec<(u16, u16)> = Vec::new();
+
+        loop {
+            let temp_slice = base + step;
+            if temp_slice < self.image_height as u16 {
+                slices.push((base, temp_slice));
+                base = temp_slice + 1;
+            } else if temp_slice >= self.image_height as u16 {
+                slices.push((base, self.image_height as u16));
+                break;
+            }
+        }
+
+        slices
     }
 
     fn charge_pixel(&self, world: &World) -> String {
