@@ -1,4 +1,4 @@
-use crate::structures::{Camera, Interval, Ray, World};
+use crate::structures::{Interval, Ray};
 use nalgebra::Vector3;
 use rand::Rng;
 

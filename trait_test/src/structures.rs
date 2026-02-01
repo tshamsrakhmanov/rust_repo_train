@@ -1,13 +1,10 @@
 use crate::aux_fn::{is_face_normal, random_on_hemisphere, random_unit_vector, write_pixel};
-use chrono::{DateTime, Local, TimeZone, Utc};
+use chrono::Local;
 use nalgebra::Vector3;
 use rand::Rng;
 use rayon::prelude::*;
-use std::fmt::format;
 use std::fs::File;
 use std::io::prelude::*;
-use std::thread;
-use std::time::Duration;
 use std::{
     f32::{INFINITY, NEG_INFINITY},
     fmt,
