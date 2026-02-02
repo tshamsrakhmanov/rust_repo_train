@@ -2,15 +2,15 @@ use crate::aux_fn::{
     is_face_normal, near_zero, random_on_hemisphere, random_unit_vector, reflect, write_pixel,
 };
 use chrono::Local;
+use dyn_clone::DynClone;
 use nalgebra::Vector3;
 use rand::Rng;
 use rayon::prelude::*;
 use std::fs::File;
 use std::io::prelude::*;
-use std::{
-    f32::{INFINITY, NEG_INFINITY},
-    fmt,
-};
+use std::thread;
+use std::time::Duration;
+use std::{f32::INFINITY, fmt};
 
 /// ********************************************
 /// HitRecord
@@ -27,7 +27,7 @@ pub struct HitRecord {
     point_of_hit: Vector3<f32>,
     normale: Vector3<f32>,
     is_outside: bool,
-    material: Lambretian,
+    material: Metal,
 }
 
 impl fmt::Display for HitRecord {
@@ -64,7 +64,7 @@ impl HitRecord {
             point_of_hit: Vector3::new(0.0, 0.0, 0.0),
             normale: Vector3::new(0.0, 0.0, 0.0),
             is_outside: false,
-            material: Lambretian::new(Vector3::new(0.0, 0.0, 0.0)),
+            material: Metal::new(Vector3::new(0.0, 0.0, 0.0)),
         }
     }
     pub fn get_normale(&self) -> Vector3<f32> {
@@ -87,7 +87,7 @@ impl HitRecord {
             point_of_hit: point_of_hit,
             normale: normale,
             is_outside: is_outside,
-            material: Lambretian::new(Vector3::new(0.0, 0.0, 0.0)),
+            material: Metal::new(Vector3::new(0.0, 0.0, 0.0)),
         }
     }
 }
@@ -253,7 +253,7 @@ impl Hittable for World {
 pub struct Sphere {
     origin: Vector3<f32>,
     radius: f32,
-    material: Lambretian,
+    material: Metal,
 }
 impl fmt::Display for Sphere {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -268,11 +268,11 @@ impl fmt::Debug for Sphere {
 }
 
 impl Sphere {
-    pub fn new(origin: Vector3<f32>, radius: f32) -> Sphere {
+    pub fn new(origin: Vector3<f32>, radius: f32, material: Metal) -> Sphere {
         Sphere {
             origin: origin,
             radius: radius,
-            material: Lambretian::new(Vector3::new(1.0, 1.0, 1.0)),
+            material: material,
         }
     }
 
@@ -326,7 +326,13 @@ impl Hittable for Sphere {
             temp_res.hit_record.normale = -n1;
             temp_res.hit_record.is_outside = false;
         }
-        temp_res.hit_record.material = self.material;
+        // temp_res.hit_record.material = Box::new(Metal::new(Vector3::new(0.4, 0.4, 0.4)));
+        let temp_metal = &self.material;
+        temp_res.hit_record.material = Metal::new(Vector3::new(
+            temp_metal.albedo.x,
+            temp_metal.albedo.y,
+            temp_metal.albedo.z,
+        ));
 
         temp_res
     }
@@ -391,10 +397,10 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f32, image_width: i32, samples_per_pixel: i32) -> Camera {
+    pub fn new(aspect_ratio: f32, image_width: i32, samples_per_pixel: i32, jumps: u8) -> Camera {
         // general constants
         let center = Vector3::new(0.0, 0.0, 0.0);
-        let max_depth = 10;
+        let max_depth = jumps;
         let rend_slices = 100;
         let focal_length: f32 = 1.0;
         let viewport_height: f32 = 2.0;
@@ -555,15 +561,36 @@ impl Camera {
         let result = world.hit_test(ray, &temp_int);
 
         // if hit detected - color the ray in approptirate colors
-        if result.is_hit && result.hit_record.get_distance() > 0.0 {
-            // basic implementation to draw spheres as normales map
+        if result.is_hit {
+            // 1st basic implementation to draw spheres as normales map
             // let a = 0.5 * (result.hit_record.get_normale() + Vector3::new(1.0, 1.0, 1.0));
             // return a;
 
             // 2nd implementation - just gray scale world based on depth
-            let dir = random_on_hemisphere(result.hit_record.get_normale()) + random_unit_vector();
-            let temp_ray = Ray::new(result.hit_record.get_point_of_hit(), dir);
-            return 0.5 * Camera::ray_color(&temp_ray, depth - 1, world);
+            // let dir = random_on_hemisphere(result.hit_record.get_normale()) + random_unit_vector();
+            // let temp_ray = Ray::new(result.hit_record.get_point_of_hit(), dir);
+            // return 0.5 * Camera::ray_color(&temp_ray, depth - 1, world);
+
+            let temp_atten = Vector3::new(0.0, 0.0, 0.0);
+            let temp_ray_scattered =
+                Ray::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(1.0, 1.0, 1.0));
+
+            let scatter_result = result.hit_record.material.scatter(
+                ray,
+                &result.hit_record,
+                temp_atten,
+                &temp_ray_scattered,
+            );
+
+            if scatter_result.is_scatter {
+                let t1: Vector3<f32> =
+                    Camera::ray_color(&scatter_result.ray_scattered, depth - 1, world);
+                let t2: Vector3<f32> = scatter_result.attenuation;
+                let t3: Vector3<f32> = t2.cross(&t1);
+                return t3;
+            }
+
+            return Vector3::new(0.0, 0.0, 0.0);
         }
 
         // if not hit - just draw background
@@ -611,7 +638,6 @@ impl Camera {
 /// LAMBERTIAN
 /// ********************************************
 // representation of material type - Lambretian
-#[derive(Clone, Copy)]
 pub struct Lambretian {
     albedo: Vector3<f32>,
 }
@@ -648,16 +674,18 @@ pub struct ScatterResult {
     attenuation: Vector3<f32>,
     ray_scattered: Ray,
 }
-
-impl ScatterResult {
-    pub fn new_default() -> ScatterResult {
-        ScatterResult {
-            is_scatter: false,
-            attenuation: Vector3::new(0.0, 0.0, 0.0),
-            ray_scattered: Ray::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(1.0, 1.0, 1.0)),
-        }
+impl fmt::Display for ScatterResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
     }
+}
 
+impl fmt::Debug for ScatterResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.logger(f)
+    }
+}
+impl ScatterResult {
     pub fn new(is_scatter: bool, attenuation: Vector3<f32>, ray_scattered: Ray) -> ScatterResult {
         ScatterResult {
             is_scatter: is_scatter,
@@ -678,13 +706,15 @@ impl ScatterResult {
 /// ********************************************
 /// METAL MATERIAL
 /// ********************************************
-#[derive(Clone, Copy)]
 pub struct Metal {
     albedo: Vector3<f32>,
 }
 impl Metal {
     pub fn new(albedo: Vector3<f32>) -> Metal {
         Metal { albedo }
+    }
+    pub fn get_albedo(&self) -> Vector3<f32> {
+        self.albedo
     }
 }
 impl Material for Metal {
@@ -697,7 +727,7 @@ impl Material for Metal {
     ) -> ScatterResult {
         let reflected_vector = reflect(&ray_in.direction, &hitRecord.normale);
         let scattered_ray = Ray::new(hitRecord.point_of_hit, reflected_vector);
-        let attenuation = self.albedo;
+        let attenuation = self.get_albedo();
         let temp_ans = ScatterResult::new(true, attenuation, scattered_ray);
         temp_ans
     }
