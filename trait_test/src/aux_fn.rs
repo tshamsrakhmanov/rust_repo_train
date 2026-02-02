@@ -83,3 +83,14 @@ pub fn linear_to_gamma(a: f32) -> f32 {
     }
     return 0.0;
 }
+
+/// Check if Vec3 is close to zero
+pub fn near_zero(vec: &Vector3<f32>) -> bool {
+    let tolerance = 1e-8;
+    return vec.x < tolerance && vec.y < tolerance && vec.z < tolerance;
+}
+
+pub fn reflect(vec: &Vector3<f32>, normale: &Vector3<f32>) -> Vector3<f32> {
+    let temp_answer = vec - 2.0 * vec.dot(&normale) * normale;
+    temp_answer
+}

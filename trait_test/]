@@ -1,6 +1,4 @@
-use crate::aux_fn::{
-    is_face_normal, near_zero, random_on_hemisphere, random_unit_vector, reflect, write_pixel,
-};
+use crate::aux_fn::{is_face_normal, random_on_hemisphere, random_unit_vector, write_pixel};
 use chrono::Local;
 use nalgebra::Vector3;
 use rand::Rng;
@@ -283,6 +281,11 @@ impl Sphere {
         let s1 = format!("(x:{}, y:{}, z:{})", p0, p1, p2);
         write!(f, "Sphere [origin:{}, radius:{}]\n", s1, self.radius)
     }
+    pub fn get_material(&self) -> Lambretian {
+        Lambretian {
+            albedo: Vector3::new(1.0, 1.0, 1.0),
+        }
+    }
 }
 
 impl Hittable for Sphere {
@@ -559,8 +562,6 @@ impl Camera {
             // basic implementation to draw spheres as normales map
             // let a = 0.5 * (result.hit_record.get_normale() + Vector3::new(1.0, 1.0, 1.0));
             // return a;
-
-            // 2nd implementation - just gray scale world based on depth
             let dir = random_on_hemisphere(result.hit_record.get_normale()) + random_unit_vector();
             let temp_ray = Ray::new(result.hit_record.get_point_of_hit(), dir);
             return 0.5 * Camera::ray_color(&temp_ray, depth - 1, world);
@@ -572,7 +573,6 @@ impl Camera {
         let bg_color = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
         return bg_color;
     }
-
     /// Gives randomized vector3 in -0.5...+0.5 in XY plane
     fn sample_square() -> Vector3<f32> {
         Vector3::new(
@@ -581,8 +581,7 @@ impl Camera {
             0.0,
         )
     }
-
-    /// Generates Ray by random offset from fn sample_square
+    /// Generates Rat by random offset from fn sample_square
     /// Given ray originates from camera center and directed
     /// to random area aroud pixel on final image
     ///
@@ -611,7 +610,6 @@ impl Camera {
 /// LAMBERTIAN
 /// ********************************************
 // representation of material type - Lambretian
-#[derive(Clone, Copy)]
 pub struct Lambretian {
     albedo: Vector3<f32>,
 }
@@ -627,79 +625,8 @@ impl Material for Lambretian {
         hitRecord: &HitRecord,
         attenuation: Vector3<f32>,
         ray_scattered: &Ray,
-    ) -> ScatterResult {
-        let mut scatter_direction = hitRecord.normale + random_unit_vector();
-        if near_zero(&scatter_direction) {
-            scatter_direction = hitRecord.normale;
-        }
-        let temp_ray_scattered = Ray::new(hitRecord.point_of_hit, scatter_direction);
-        let temp_attenuation_albedo = self.albedo;
-        let temp_scatter_result =
-            ScatterResult::new(true, temp_attenuation_albedo, temp_ray_scattered);
-        temp_scatter_result
-    }
-}
-
-/// ********************************************
-/// SCATTERING RESULT
-/// ********************************************
-pub struct ScatterResult {
-    is_scatter: bool,
-    attenuation: Vector3<f32>,
-    ray_scattered: Ray,
-}
-
-impl ScatterResult {
-    pub fn new_default() -> ScatterResult {
-        ScatterResult {
-            is_scatter: false,
-            attenuation: Vector3::new(0.0, 0.0, 0.0),
-            ray_scattered: Ray::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(1.0, 1.0, 1.0)),
-        }
-    }
-
-    pub fn new(is_scatter: bool, attenuation: Vector3<f32>, ray_scattered: Ray) -> ScatterResult {
-        ScatterResult {
-            is_scatter: is_scatter,
-            attenuation: attenuation,
-            ray_scattered: ray_scattered,
-        }
-    }
-
-    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "ScatterResult [is_scatter:{}, attenuation:{}, ray_scattered:{} ]\n",
-            self.is_scatter, self.attenuation, self.ray_scattered
-        )
-    }
-}
-
-/// ********************************************
-/// METAL MATERIAL
-/// ********************************************
-#[derive(Clone, Copy)]
-pub struct Metal {
-    albedo: Vector3<f32>,
-}
-impl Metal {
-    pub fn new(albedo: Vector3<f32>) -> Metal {
-        Metal { albedo }
-    }
-}
-impl Material for Metal {
-    fn scatter(
-        &self,
-        ray_in: &Ray,
-        hitRecord: &HitRecord,
-        attenuation: Vector3<f32>,
-        ray_scattered: &Ray,
-    ) -> ScatterResult {
-        let reflected_vector = reflect(&ray_in.direction, &hitRecord.normale);
-        let scattered_ray = Ray::new(hitRecord.point_of_hit, reflected_vector);
-        let attenuation = self.albedo;
-        let temp_ans = ScatterResult::new(true, attenuation, scattered_ray);
-        temp_ans
+    ) -> bool {
+        true
     }
 }
 /// ********************************************
@@ -717,5 +644,5 @@ pub trait Material {
         hitRecord: &HitRecord,
         attenuation: Vector3<f32>,
         ray_scattered: &Ray,
-    ) -> ScatterResult;
+    ) -> bool;
 }
