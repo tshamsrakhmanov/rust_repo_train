@@ -9,10 +9,6 @@ pub fn write_pixel(pixel: Vector3<f32>) -> String {
     let g = linear_to_gamma(pixel.y);
     let b = linear_to_gamma(pixel.z);
 
-    // r = linear_to_gamma(r);
-    // g = linear_to_gamma(g);
-    // b = linear_to_gamma(b);
-
     let ir = (256.0 * int1.clamp(r)) as u8;
     let ig = (256.0 * int1.clamp(g)) as u8;
     let ib = (256.0 * int1.clamp(b)) as u8;
@@ -93,4 +89,12 @@ pub fn near_zero(vec: &Vector3<f32>) -> bool {
 pub fn reflect(vec: &Vector3<f32>, normale: &Vector3<f32>) -> Vector3<f32> {
     let temp_answer = vec - 2.0 * vec.dot(&normale) * normale;
     temp_answer
+}
+
+pub fn zero_vec3() -> Vector3<f32> {
+    Vector3::new(0.0, 0.0, 0.0)
+}
+
+pub fn single_vec3() -> Vector3<f32> {
+    Vector3::new(1.0, 1.0, 1.0)
 }

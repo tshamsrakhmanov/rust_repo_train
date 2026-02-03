@@ -1,5 +1,6 @@
 use crate::aux_fn::{
-    is_face_normal, near_zero, random_on_hemisphere, random_unit_vector, reflect, write_pixel,
+    is_face_normal, near_zero, random_on_hemisphere, random_unit_vector, reflect, single_vec3,
+    write_pixel, zero_vec3,
 };
 use chrono::Local;
 use nalgebra::Vector3;
@@ -62,7 +63,7 @@ impl HitRecord {
             point_of_hit: Vector3::new(0.0, 0.0, 0.0),
             normale: Vector3::new(0.0, 0.0, 0.0),
             is_outside: false,
-            material: Box::new(Metal::new(Vector3::new(0.0, 0.0, 0.0))),
+            material: Box::new(Metal::new(Vector3::new(1.0, 1.0, 1.0))),
         }
     }
     pub fn get_normale(&self) -> Vector3<f32> {
@@ -74,20 +75,20 @@ impl HitRecord {
     pub fn get_point_of_hit(&self) -> Vector3<f32> {
         self.point_of_hit
     }
-    pub fn _new(
-        distance: f32,
-        point_of_hit: Vector3<f32>,
-        normale: Vector3<f32>,
-        is_outside: bool,
-    ) -> HitRecord {
-        HitRecord {
-            distance: distance,
-            point_of_hit: point_of_hit,
-            normale: normale,
-            is_outside: is_outside,
-            material: Box::new(Metal::new(Vector3::new(0.0, 0.0, 0.0))),
-        }
-    }
+    // pub fn new(
+    //     distance: f32,
+    //     point_of_hit: Vector3<f32>,
+    //     normale: Vector3<f32>,
+    //     is_outside: bool,
+    // ) -> HitRecord {
+    //     HitRecord {
+    //         distance: distance,
+    //         point_of_hit: point_of_hit,
+    //         normale: normale,
+    //         is_outside: is_outside,
+    //         material: Box::new(Metal::new(Vector3::new(0.0, 0.0, 0.0))),
+    //     }
+    // }
 }
 
 /// ********************************************
@@ -324,8 +325,10 @@ impl Hittable for Sphere {
         temp_res.hit_record.point_of_hit = ray.translocate(root);
         temp_res.hit_record.normale =
             (temp_res.hit_record.point_of_hit - self.origin) / self.radius;
+
         let n1 = (temp_res.hit_record.point_of_hit - self.origin) / self.radius;
         let check_for_inside_outside = is_face_normal(ray, n1);
+
         if check_for_inside_outside.0 {
             temp_res.hit_record.normale = n1;
             temp_res.hit_record.is_outside = true;
@@ -334,13 +337,7 @@ impl Hittable for Sphere {
             temp_res.hit_record.normale = -n1;
             temp_res.hit_record.is_outside = false;
         }
-        // temp_res.hit_record.material = Box::new(Metal::new(Vector3::new(0.4, 0.4, 0.4)));
-        // let temp_metal = &self.material;
-        // temp_res.hit_record.material = Metal::new(Vector3::new(
-        //     temp_metal.albedo.x,
-        //     temp_metal.albedo.y,
-        //     temp_metal.albedo.z,
-        // ));
+
         if let Some(a) = self.material.as_any().downcast_ref::<Metal>() {
             let temp_albedo = a.get_albedo();
             temp_res.hit_record.material = Box::new(Metal::new(Vector3::new(
@@ -348,9 +345,9 @@ impl Hittable for Sphere {
                 temp_albedo.y,
                 temp_albedo.z,
             )));
-        } else if let Some(a) = self.material.as_any().downcast_ref::<Lambretian>() {
-            let temp_albedo = a.get_albedo();
-            temp_res.hit_record.material = Box::new(Metal::new(Vector3::new(
+        } else if let Some(b) = self.material.as_any().downcast_ref::<Lambretian>() {
+            let temp_albedo = b.get_albedo();
+            temp_res.hit_record.material = Box::new(Lambretian::new(Vector3::new(
                 temp_albedo.x,
                 temp_albedo.y,
                 temp_albedo.z,
@@ -577,7 +574,7 @@ impl Camera {
     /// Uses fallback (backgroung) and main (some object) colors
     fn ray_color(ray: &Ray, depth: u8, world: &World) -> Vector3<f32> {
         if depth <= 0 {
-            return Vector3::new(0.0, 0.0, 0.0);
+            return zero_vec3();
         }
         // generate test of ray test in world
         let temp_int = Interval::new_by_value(0.001, INFINITY);
@@ -594,14 +591,14 @@ impl Camera {
             // let temp_ray = Ray::new(result.hit_record.get_point_of_hit(), dir);
             // return 0.5 * Camera::ray_color(&temp_ray, depth - 1, world);
 
-            let temp_atten = Vector3::new(0.0, 0.0, 0.0);
-            let temp_ray_scattered =
-                Ray::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(1.0, 1.0, 1.0));
+            // let temp_atten = zero_vec3();
+            let temp_atten = single_vec3();
+            let temp_ray_scattered = Ray::new(zero_vec3(), zero_vec3());
 
             let scatter_result = result.hit_record.material.scatter(
                 ray,
                 &result.hit_record,
-                temp_atten,
+                &temp_atten,
                 &temp_ray_scattered,
             );
 
@@ -609,16 +606,16 @@ impl Camera {
                 let t1: Vector3<f32> =
                     Camera::ray_color(&scatter_result.ray_scattered, depth - 1, world);
                 let t2: Vector3<f32> = scatter_result.attenuation;
-                let t3: Vector3<f32> = t2.cross(&t1);
+                // let t2: Vector3<f32> = zero_vec3();
+                let t3: Vector3<f32> = t1.cross(&t2);
                 return t3;
             }
-
-            return Vector3::new(0.0, 0.0, 0.0);
+            return zero_vec3();
         }
 
         // if not hit - just draw background
-        let unit_dicrection = ray.get_direction().normalize();
-        let a = 0.5 * (unit_dicrection.y + 1.0);
+        let unit_direction = ray.get_direction().normalize();
+        let a = 0.5 * (unit_direction.y + 1.0);
         let bg_color = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
         return bg_color;
     }
@@ -679,18 +676,17 @@ impl Material for Lambretian {
         &self,
         ray_in: &Ray,
         hitRecord: &HitRecord,
-        attenuation: Vector3<f32>,
+        attenuation: &Vector3<f32>,
         ray_scattered: &Ray,
     ) -> ScatterResult {
         let mut scatter_direction = hitRecord.normale + random_unit_vector();
         if near_zero(&scatter_direction) {
             scatter_direction = hitRecord.normale;
         }
-        let temp_ray_scattered = Ray::new(hitRecord.point_of_hit, scatter_direction);
-        let temp_attenuation_albedo = self.albedo;
-        let temp_scatter_result =
-            ScatterResult::new(true, temp_attenuation_albedo, temp_ray_scattered);
-        temp_scatter_result
+        let scattered = Ray::new(hitRecord.point_of_hit, scatter_direction);
+        let attenuation = self.albedo;
+        let scatter_result = ScatterResult::new(true, attenuation, scattered);
+        scatter_result
     }
 }
 
@@ -750,12 +746,12 @@ impl Material for Metal {
         &self,
         ray_in: &Ray,
         hitRecord: &HitRecord,
-        attenuation: Vector3<f32>,
+        attenuation: &Vector3<f32>,
         ray_scattered: &Ray,
     ) -> ScatterResult {
         let reflected_vector = reflect(&ray_in.direction, &hitRecord.normale);
         let scattered_ray = Ray::new(hitRecord.point_of_hit, reflected_vector);
-        let attenuation = self.get_albedo();
+        let attenuation = self.albedo;
         let temp_ans = ScatterResult::new(true, attenuation, scattered_ray);
         temp_ans
     }
@@ -784,7 +780,7 @@ pub trait Material: Any {
         &self,
         ray_in: &Ray,
         hitRecord: &HitRecord,
-        attenuation: Vector3<f32>,
+        attenuation: &Vector3<f32>,
         ray_scattered: &Ray,
     ) -> ScatterResult;
 }
