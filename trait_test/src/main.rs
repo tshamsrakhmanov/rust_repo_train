@@ -7,27 +7,30 @@ fn main() {
     let aspect_ratio: f32 = 16.0 / 9.0;
     let image_width = 1920;
     let sample_per_pixel: i32 = 200;
-    let jumps = 50;
+    let jumps = 2;
 
     let cam1 = Camera::new(aspect_ratio, image_width, sample_per_pixel, jumps);
 
-    let coor_small_sphere = Vector3::new(0.0, 0.0, -1.0);
-    let radius_small_sphere: f32 = 0.5;
-    let coor_big_sphere = Vector3::new(0.0, -100.5, -1.0);
-    let radius_big_sphere: f32 = 100.0;
-    let material_small_sphere = Metal::new(Vector3::new(0.4, 0.4, 0.4));
-    let material_big_sphere = Metal::new(Vector3::new(0.4, 0.4, 0.4));
-    let small_sphere = Sphere::new(
-        coor_small_sphere,
-        radius_small_sphere,
-        material_small_sphere,
+    let material_ground = Lambretian::new(Vector3::new(0.8, 0.8, 0.0));
+    let material_center = Lambretian::new(Vector3::new(0.1, 0.2, 0.5));
+    let material_left = Metal::new(Vector3::new(0.8, 0.8, 0.8));
+    let material_right = Metal::new(Vector3::new(0.8, 0.6, 0.2));
+
+    let ground_sphere = Sphere::new(
+        Vector3::new(0.0, -100.5, -1.0),
+        100.0,
+        Box::new(material_ground),
     );
-    let big_sphere = Sphere::new(coor_big_sphere, radius_big_sphere, material_big_sphere);
+    let center_sphere = Sphere::new(Vector3::new(0.0, 0.0, -1.2), 0.5, Box::new(material_center));
+    let left_sphere = Sphere::new(Vector3::new(-1.0, 0.0, -1.0), 0.5, Box::new(material_left));
+    let right_sphere = Sphere::new(Vector3::new(1.0, 0.0, -1.0), 0.5, Box::new(material_right));
 
     // world definition
     let mut world2 = World::new();
-    world2.add_object(small_sphere);
-    world2.add_object(big_sphere);
+    world2.add_object(Box::new(ground_sphere));
+    world2.add_object(Box::new(center_sphere));
+    world2.add_object(Box::new(left_sphere));
+    world2.add_object(Box::new(right_sphere));
 
     let _ = cam1.render(&world2);
 }

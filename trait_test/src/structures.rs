@@ -2,14 +2,12 @@ use crate::aux_fn::{
     is_face_normal, near_zero, random_on_hemisphere, random_unit_vector, reflect, write_pixel,
 };
 use chrono::Local;
-use dyn_clone::DynClone;
 use nalgebra::Vector3;
 use rand::Rng;
 use rayon::prelude::*;
+use std::any::Any;
 use std::fs::File;
 use std::io::prelude::*;
-use std::thread;
-use std::time::Duration;
 use std::{f32::INFINITY, fmt};
 
 /// ********************************************
@@ -27,7 +25,7 @@ pub struct HitRecord {
     point_of_hit: Vector3<f32>,
     normale: Vector3<f32>,
     is_outside: bool,
-    material: Metal,
+    material: Box<dyn Material>,
 }
 
 impl fmt::Display for HitRecord {
@@ -64,7 +62,7 @@ impl HitRecord {
             point_of_hit: Vector3::new(0.0, 0.0, 0.0),
             normale: Vector3::new(0.0, 0.0, 0.0),
             is_outside: false,
-            material: Metal::new(Vector3::new(0.0, 0.0, 0.0)),
+            material: Box::new(Metal::new(Vector3::new(0.0, 0.0, 0.0))),
         }
     }
     pub fn get_normale(&self) -> Vector3<f32> {
@@ -87,7 +85,7 @@ impl HitRecord {
             point_of_hit: point_of_hit,
             normale: normale,
             is_outside: is_outside,
-            material: Metal::new(Vector3::new(0.0, 0.0, 0.0)),
+            material: Box::new(Metal::new(Vector3::new(0.0, 0.0, 0.0))),
         }
     }
 }
@@ -189,7 +187,7 @@ impl Ray {
 /// ********************************************
 
 pub struct World {
-    list_of_objects: Vec<Sphere>,
+    list_of_objects: Vec<Box<dyn Hittable>>,
 }
 impl fmt::Display for World {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -209,12 +207,22 @@ impl World {
         }
     }
 
-    pub fn add_object(&mut self, object: Sphere) {
-        self.list_of_objects.push(object);
+    pub fn add_object(&mut self, object: Box<dyn Hittable>) {
+        self.list_of_objects.push(object.into());
     }
     pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s1 = format!("{:?}", self.list_of_objects);
-        write!(f, "World [{}]\n", s1)
+        let mut temp_str = String::new();
+        // temp_str.push_str("[");
+        for pos in &self.list_of_objects {
+            if let Some(a) = pos.as_any().downcast_ref::<Sphere>() {
+                temp_str.push_str("Some Sphere");
+            } else {
+                println!("Unknown object")
+            }
+            temp_str.push_str(",");
+        }
+        // temp_str.push_str("]");
+        write!(f, "World [{}]\n", temp_str)
     }
 }
 
@@ -253,7 +261,7 @@ impl Hittable for World {
 pub struct Sphere {
     origin: Vector3<f32>,
     radius: f32,
-    material: Metal,
+    material: Box<dyn Material>,
 }
 impl fmt::Display for Sphere {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -268,7 +276,7 @@ impl fmt::Debug for Sphere {
 }
 
 impl Sphere {
-    pub fn new(origin: Vector3<f32>, radius: f32, material: Metal) -> Sphere {
+    pub fn new(origin: Vector3<f32>, radius: f32, material: Box<dyn Material>) -> Sphere {
         Sphere {
             origin: origin,
             radius: radius,
@@ -327,12 +335,27 @@ impl Hittable for Sphere {
             temp_res.hit_record.is_outside = false;
         }
         // temp_res.hit_record.material = Box::new(Metal::new(Vector3::new(0.4, 0.4, 0.4)));
-        let temp_metal = &self.material;
-        temp_res.hit_record.material = Metal::new(Vector3::new(
-            temp_metal.albedo.x,
-            temp_metal.albedo.y,
-            temp_metal.albedo.z,
-        ));
+        // let temp_metal = &self.material;
+        // temp_res.hit_record.material = Metal::new(Vector3::new(
+        //     temp_metal.albedo.x,
+        //     temp_metal.albedo.y,
+        //     temp_metal.albedo.z,
+        // ));
+        if let Some(a) = self.material.as_any().downcast_ref::<Metal>() {
+            let temp_albedo = a.get_albedo();
+            temp_res.hit_record.material = Box::new(Metal::new(Vector3::new(
+                temp_albedo.x,
+                temp_albedo.y,
+                temp_albedo.z,
+            )));
+        } else if let Some(a) = self.material.as_any().downcast_ref::<Lambretian>() {
+            let temp_albedo = a.get_albedo();
+            temp_res.hit_record.material = Box::new(Metal::new(Vector3::new(
+                temp_albedo.x,
+                temp_albedo.y,
+                temp_albedo.z,
+            )));
+        }
 
         temp_res
     }
@@ -641,11 +664,16 @@ impl Camera {
 pub struct Lambretian {
     albedo: Vector3<f32>,
 }
+
 impl Lambretian {
     pub fn new(albedo: Vector3<f32>) -> Lambretian {
         Lambretian { albedo }
     }
+    pub fn get_albedo(&self) -> Vector3<f32> {
+        self.albedo
+    }
 }
+
 impl Material for Lambretian {
     fn scatter(
         &self,
@@ -736,11 +764,22 @@ impl Material for Metal {
 /// TRAITS
 /// ********************************************
 
-pub trait Hittable {
+pub trait Hittable: Any {
     fn hit_test(&self, ray: &Ray, int: &Interval) -> HitResultTuple;
 }
 
-pub trait Material {
+unsafe impl Sync for World {}
+
+impl dyn Hittable {
+    pub fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    pub fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+}
+pub trait Material: Any {
     fn scatter(
         &self,
         ray_in: &Ray,
@@ -748,4 +787,13 @@ pub trait Material {
         attenuation: Vector3<f32>,
         ray_scattered: &Ray,
     ) -> ScatterResult;
+}
+impl dyn Material {
+    pub fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    pub fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 }
