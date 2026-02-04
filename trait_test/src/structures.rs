@@ -1,6 +1,6 @@
 use crate::aux_fn::{
-    all_one_vec3, all_zero_vec3, is_face_normal, near_zero, random_on_hemisphere,
-    random_unit_vector, reflect, refract, write_pixel,
+    all_one_vec3, all_zero_vec3, is_face_normal, near_zero, random_unit_vector, reflect, refract,
+    write_pixel,
 };
 use chrono::Local;
 use nalgebra::Vector3;
@@ -61,15 +61,15 @@ impl HitRecord {
             material: Box::new(Metal::new(all_zero_vec3(), 1.0)),
         }
     }
-    pub fn get_normale(&self) -> Vector3<f32> {
-        self.normale
-    }
-    pub fn get_distance(&self) -> f32 {
-        self.distance
-    }
-    pub fn get_point_of_hit(&self) -> Vector3<f32> {
-        self.point_of_hit
-    }
+    // pub fn get_normale(&self) -> Vector3<f32> {
+    //     self.normale
+    // }
+    // pub fn get_distance(&self) -> f32 {
+    //     self.distance
+    // }
+    // pub fn get_point_of_hit(&self) -> Vector3<f32> {
+    //     self.point_of_hit
+    // }
 }
 
 /// ********************************************
@@ -197,7 +197,8 @@ impl World {
         let mut temp_str = String::new();
         for pos in &self.list_of_objects {
             if let Some(a) = pos.as_any().downcast_ref::<Sphere>() {
-                temp_str.push_str("Some Sphere");
+                let t = format!("Sphere at: {}", a.origin);
+                temp_str.push_str(&t);
             } else {
                 println!("Unknown object")
             }
@@ -365,10 +366,10 @@ impl Interval {
     pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Interval [min:{}, max:{}]\n", self.min, self.max)
     }
-    pub fn size(&self) -> f32 {
+    pub fn _size(&self) -> f32 {
         self.max - self.min
     }
-    pub fn is_contains(&self, x: f32) -> bool {
+    pub fn _is_contains(&self, x: f32) -> bool {
         self.min <= x && x <= self.max
     }
     pub fn is_surround(&self, x: f32) -> bool {
@@ -380,7 +381,7 @@ impl Interval {
 /// CAMERA
 /// ********************************************
 pub struct Camera {
-    pub aspect_ratio: f32,
+    aspect_ratio: f32,
     pub image_width: i32,
     image_height: i32,
     center: Vector3<f32>,
@@ -429,6 +430,10 @@ impl Camera {
             max_depth: max_depth,
             rendering_slices: rend_slices,
         }
+    }
+
+    pub fn _get_aspect(&self) -> f32 {
+        self.aspect_ratio
     }
 
     /// Main function to call for a draw
@@ -640,12 +645,12 @@ impl Lambretian {
 }
 
 impl Material for Lambretian {
-    fn scatter(&self, ray_in: &Ray, hitRecord: &HitRecord) -> ScatterResult {
-        let mut scatter_direction = hitRecord.normale + random_unit_vector();
+    fn scatter(&self, ray_in: &Ray, rec: &HitRecord) -> ScatterResult {
+        let mut scatter_direction = rec.normale + random_unit_vector();
         if near_zero(&scatter_direction) {
-            scatter_direction = hitRecord.normale;
+            scatter_direction = rec.normale;
         }
-        let scattered = Ray::new(hitRecord.point_of_hit, scatter_direction);
+        let scattered = Ray::new(rec.point_of_hit, scatter_direction);
         let attenuation = self.albedo;
         let scatter_result = ScatterResult::new(true, attenuation, scattered);
         scatter_result
@@ -705,18 +710,18 @@ impl Metal {
     }
 }
 impl Material for Metal {
-    fn scatter(&self, ray_in: &Ray, hitRecord: &HitRecord) -> ScatterResult {
+    fn scatter(&self, ray_in: &Ray, rec: &HitRecord) -> ScatterResult {
         let rnd_vec = random_unit_vector();
-        let reflected_vector = reflect(&ray_in.direction, &hitRecord.normale).normalize()
+        let reflected_vector = reflect(&ray_in.direction, &rec.normale).normalize()
             + (Vector3::new(
                 self.fuzz * rnd_vec.x,
                 self.fuzz * rnd_vec.y,
                 self.fuzz * rnd_vec.z,
             ));
-        let scattered_ray = Ray::new(hitRecord.point_of_hit, reflected_vector);
+        let scattered_ray = Ray::new(rec.point_of_hit, reflected_vector);
         let attenuation = self.albedo;
         let a2: bool;
-        if reflected_vector.dot(&hitRecord.normale) > 0.0 {
+        if reflected_vector.dot(&rec.normale) > 0.0 {
             a2 = true;
         } else {
             a2 = false;
@@ -739,18 +744,18 @@ impl Dielectric {
     }
 }
 impl Material for Dielectric {
-    fn scatter(&self, ray_in: &Ray, hitRecord: &HitRecord) -> ScatterResult {
+    fn scatter(&self, ray_in: &Ray, rec: &HitRecord) -> ScatterResult {
         let attenuation = all_one_vec3();
         let ri: f32;
-        if hitRecord.is_outside {
+        if rec.is_outside {
             ri = 1.0 / self.refraction_index
         } else {
             ri = self.refraction_index
         }
 
         let unit_direction = ray_in.direction.normalize();
-        let refracted = refract(unit_direction, hitRecord.normale, ri);
-        let scattered = Ray::new(hitRecord.point_of_hit, refracted);
+        let refracted = refract(unit_direction, rec.normale, ri);
+        let scattered = Ray::new(rec.point_of_hit, refracted);
 
         ScatterResult::new(true, attenuation, scattered)
     }
@@ -769,13 +774,13 @@ impl dyn Hittable {
         self
     }
 
-    pub fn as_any_mut(&mut self) -> &mut dyn Any {
+    pub fn _as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
 }
 
 pub trait Material: Any {
-    fn scatter(&self, ray_in: &Ray, hitRecord: &HitRecord) -> ScatterResult;
+    fn scatter(&self, ray_in: &Ray, rec: &HitRecord) -> ScatterResult;
 }
 
 impl dyn Material {
@@ -783,7 +788,7 @@ impl dyn Material {
         self
     }
 
-    pub fn as_any_mut(&mut self) -> &mut dyn Any {
+    pub fn _as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
 }

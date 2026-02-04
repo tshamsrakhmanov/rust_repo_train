@@ -36,7 +36,7 @@ pub fn is_face_normal(ray: &Ray, outward_normal_unit: Vector3<f32>) -> (bool, Ve
 
     (answer_bool, answer_vec)
 }
-pub fn random_vector_positive() -> Vector3<f32> {
+pub fn _random_vector_positive() -> Vector3<f32> {
     let a: Vector3<f32> = Vector3::new(
         rand::rng().random_range(0.0..1.0),
         rand::rng().random_range(0.0..1.0),
@@ -65,7 +65,8 @@ pub fn random_unit_vector() -> Vector3<f32> {
     ans
 }
 
-pub fn random_on_hemisphere(normal: Vector3<f32>) -> Vector3<f32> {
+// used on the case, when render gives grayscale rays - legacy
+pub fn _random_on_hemisphere(normal: Vector3<f32>) -> Vector3<f32> {
     let on_unit_sphere: Vector3<f32> = random_unit_vector();
     if on_unit_sphere.dot(&normal) > 0.0 {
         return on_unit_sphere;
