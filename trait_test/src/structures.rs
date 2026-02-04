@@ -1,6 +1,6 @@
 use crate::aux_fn::{
-    is_face_normal, near_zero, random_on_hemisphere, random_unit_vector, reflect, single_vec3,
-    write_pixel, zero_vec3,
+    is_face_normal, near_zero, random_on_hemisphere, random_unit_vector, reflect, refract,
+    single_vec3, write_pixel, zero_vec3,
 };
 use chrono::Local;
 use nalgebra::Vector3;
@@ -331,6 +331,9 @@ impl Hittable for Sphere {
                 albedo_of_material.y,
                 albedo_of_material.z,
             )));
+        } else if let Some(mat) = self.material.as_any().downcast_ref::<Dielectric>() {
+            let refraction_of_material = mat.refraction_index;
+            temp_res.hit_record.material = Box::new(Dielectric::new(refraction_of_material));
         }
 
         temp_res
@@ -724,6 +727,37 @@ impl Material for Metal {
             a2 = false;
         }
         ScatterResult::new(a2, attenuation, scattered_ray)
+    }
+}
+
+/// ********************************************
+/// DIELECTRIC MATERIAL
+/// ********************************************
+pub struct Dielectric {
+    refraction_index: f32,
+}
+impl Dielectric {
+    pub fn new(refcation_index: f32) -> Dielectric {
+        Dielectric {
+            refraction_index: refcation_index,
+        }
+    }
+}
+impl Material for Dielectric {
+    fn scatter(&self, ray_in: &Ray, hitRecord: &HitRecord) -> ScatterResult {
+        let attenuation = single_vec3();
+        let ri: f32;
+        if hitRecord.is_outside {
+            ri = 1.0 / self.refraction_index
+        } else {
+            ri = self.refraction_index
+        }
+
+        let unit_direction = ray_in.direction.normalize();
+        let refracted = refract(unit_direction, hitRecord.normale, ri);
+        let scattered = Ray::new(hitRecord.point_of_hit, refracted);
+
+        ScatterResult::new(true, attenuation, scattered)
     }
 }
 

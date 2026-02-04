@@ -101,8 +101,12 @@ pub fn single_vec3() -> Vector3<f32> {
 }
 
 pub fn refract(uv: Vector3<f32>, n: Vector3<f32>, eoe: f32) -> Vector3<f32> {
-    let cos_theta = -uv.dot(&n).min(1.0);
+    // let cos_theta = -uv.dot(&n).min(1.0);
+    let cos_theta: f32 = (1.0 as f32).min(-uv.dot(&n));
     let r_out_perp = eoe * (uv + cos_theta * n);
-    let r_out_parallel = -((1.0 - r_out_perp.norm().sqrt()).abs()).sqrt() * n;
+    // let r_out_parallel = -((1.0 - r_out_perp.norm().sqrt()).abs()).sqrt() * n;
+
+    let a = (1.0 - r_out_perp.norm().sqrt()).abs();
+    let r_out_parallel = -a.sqrt() * n;
     r_out_perp + r_out_parallel
 }
