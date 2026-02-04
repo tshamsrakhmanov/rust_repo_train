@@ -5,7 +5,7 @@ mod structures;
 
 fn main() {
     let aspect_ratio: f32 = 16.0 / 9.0;
-    let image_width = 1920;
+    let image_width = 1000;
     let sample_per_pixel: i32 = 100;
     let jumps = 50;
 

@@ -60,10 +60,10 @@ impl HitRecord {
     pub fn new_default() -> HitRecord {
         HitRecord {
             distance: 0.0,
-            point_of_hit: Vector3::new(0.0, 0.0, 0.0),
-            normale: Vector3::new(0.0, 0.0, 0.0),
+            point_of_hit: zero_vec3(),
+            normale: zero_vec3(),
             is_outside: false,
-            material: Box::new(Metal::new(Vector3::new(0.0, 0.0, 0.0), 1.0)),
+            material: Box::new(Metal::new(zero_vec3(), 1.0)),
         }
     }
     pub fn get_normale(&self) -> Vector3<f32> {
@@ -187,6 +187,7 @@ impl fmt::Debug for World {
         self.logger(f)
     }
 }
+
 impl World {
     pub fn new() -> World {
         World {
@@ -314,12 +315,22 @@ impl Hittable for Sphere {
         }
 
         if let Some(mat) = self.material.as_any().downcast_ref::<Metal>() {
-            let a = mat.get_albedo();
-            temp_res.hit_record.material =
-                Box::new(Metal::new(Vector3::new(a.x, a.y, a.z), mat.fuzz));
+            let albedo_of_material = mat.get_albedo();
+            temp_res.hit_record.material = Box::new(Metal::new(
+                Vector3::new(
+                    albedo_of_material.x,
+                    albedo_of_material.y,
+                    albedo_of_material.z,
+                ),
+                mat.fuzz,
+            ));
         } else if let Some(mat) = self.material.as_any().downcast_ref::<Lambretian>() {
-            let a = mat.get_albedo();
-            temp_res.hit_record.material = Box::new(Lambretian::new(Vector3::new(a.x, a.y, a.z)));
+            let albedo_of_material = mat.get_albedo();
+            temp_res.hit_record.material = Box::new(Lambretian::new(Vector3::new(
+                albedo_of_material.x,
+                albedo_of_material.y,
+                albedo_of_material.z,
+            )));
         }
 
         temp_res
@@ -387,7 +398,7 @@ pub struct Camera {
 impl Camera {
     pub fn new(aspect_ratio: f32, image_width: i32, samples_per_pixel: i32, jumps: u8) -> Camera {
         // general constants
-        let center = Vector3::new(0.0, 0.0, 0.0);
+        let center = zero_vec3();
         let max_depth = jumps;
         let rend_slices = 100;
         let focal_length: f32 = 1.0;
@@ -499,7 +510,7 @@ impl Camera {
         let mut buffer_line = String::new();
         for y_pos in slice.0..slice.1 {
             for x_pos in 0..self.image_width {
-                let mut temp_color = Vector3::new(0.0, 0.0, 0.0);
+                let mut temp_color = zero_vec3();
                 for _ in 0..100 {
                     let temp_ray = self.get_ray(x_pos, y_pos as i32);
                     let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
