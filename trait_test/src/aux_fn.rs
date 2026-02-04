@@ -1,6 +1,7 @@
 use crate::structures::{Interval, Ray};
-use nalgebra::Vector3;
+use nalgebra::{ComplexField, Vector3};
 use rand::Rng;
+use std::cmp::min as j;
 
 pub fn write_pixel(pixel: Vector3<f32>) -> String {
     let int1 = Interval::new_by_value(0.0, 0.999);
@@ -97,4 +98,11 @@ pub fn zero_vec3() -> Vector3<f32> {
 
 pub fn single_vec3() -> Vector3<f32> {
     Vector3::new(1.0, 1.0, 1.0)
+}
+
+pub fn refract(uv: Vector3<f32>, n: Vector3<f32>, eoe: f32) -> Vector3<f32> {
+    let cos_theta = -uv.dot(&n).min(1.0);
+    let r_out_perp = eoe * (uv + cos_theta * n);
+    let r_out_parallel = -((1.0 - r_out_perp.norm().sqrt()).abs()).sqrt() * n;
+    r_out_perp + r_out_parallel
 }
