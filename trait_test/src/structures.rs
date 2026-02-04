@@ -1,6 +1,6 @@
 use crate::aux_fn::{
-    is_face_normal, near_zero, random_on_hemisphere, random_unit_vector, reflect, refract,
-    single_vec3, write_pixel, zero_vec3,
+    all_one_vec3, all_zero_vec3, is_face_normal, near_zero, random_on_hemisphere,
+    random_unit_vector, reflect, refract, write_pixel,
 };
 use chrono::Local;
 use nalgebra::Vector3;
@@ -16,11 +16,6 @@ use std::{f32::INFINITY, fmt};
 /// ********************************************
 /// Describe finitive fact of hit on an object
 ///   with need details (where, on which distance, what face)
-///
-/// distance -
-/// point_of_hit -
-/// normale -
-/// is_outside -
 pub struct HitRecord {
     distance: f32,
     point_of_hit: Vector3<f32>,
@@ -60,10 +55,10 @@ impl HitRecord {
     pub fn new_default() -> HitRecord {
         HitRecord {
             distance: 0.0,
-            point_of_hit: zero_vec3(),
-            normale: zero_vec3(),
+            point_of_hit: all_zero_vec3(),
+            normale: all_zero_vec3(),
             is_outside: false,
-            material: Box::new(Metal::new(zero_vec3(), 1.0)),
+            material: Box::new(Metal::new(all_zero_vec3(), 1.0)),
         }
     }
     pub fn get_normale(&self) -> Vector3<f32> {
@@ -401,7 +396,7 @@ pub struct Camera {
 impl Camera {
     pub fn new(aspect_ratio: f32, image_width: i32, samples_per_pixel: i32, jumps: u8) -> Camera {
         // general constants
-        let center = zero_vec3();
+        let center = all_zero_vec3();
         let max_depth = jumps;
         let rend_slices = 100;
         let focal_length: f32 = 1.0;
@@ -513,7 +508,7 @@ impl Camera {
         let mut buffer_line = String::new();
         for y_pos in slice.0..slice.1 {
             for x_pos in 0..self.image_width {
-                let mut temp_color = zero_vec3();
+                let mut temp_color = all_zero_vec3();
                 for _ in 0..100 {
                     let temp_ray = self.get_ray(x_pos, y_pos as i32);
                     let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
@@ -556,7 +551,7 @@ impl Camera {
     /// Uses fallback (backgroung) and main (some object) colors
     fn ray_color(ray: &Ray, depth: u8, world: &World) -> Vector3<f32> {
         if depth <= 0 {
-            return zero_vec3();
+            return all_zero_vec3();
         }
         // generate test of ray test in world
         let temp_int = Interval::new_by_value(0.001, INFINITY);
@@ -583,7 +578,7 @@ impl Camera {
                 return t4;
             }
 
-            return zero_vec3();
+            return all_zero_vec3();
         }
 
         // if not hit - just draw background
@@ -745,7 +740,7 @@ impl Dielectric {
 }
 impl Material for Dielectric {
     fn scatter(&self, ray_in: &Ray, hitRecord: &HitRecord) -> ScatterResult {
-        let attenuation = single_vec3();
+        let attenuation = all_one_vec3();
         let ri: f32;
         if hitRecord.is_outside {
             ri = 1.0 / self.refraction_index

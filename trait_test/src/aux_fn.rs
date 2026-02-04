@@ -1,7 +1,6 @@
 use crate::structures::{Interval, Ray};
-use nalgebra::{ComplexField, Vector3};
+use nalgebra::Vector3;
 use rand::Rng;
-use std::cmp::min as j;
 
 pub fn write_pixel(pixel: Vector3<f32>) -> String {
     let int1 = Interval::new_by_value(0.0, 0.999);
@@ -92,20 +91,17 @@ pub fn reflect(vec: &Vector3<f32>, normale: &Vector3<f32>) -> Vector3<f32> {
     temp_answer
 }
 
-pub fn zero_vec3() -> Vector3<f32> {
+pub fn all_zero_vec3() -> Vector3<f32> {
     Vector3::new(0.0, 0.0, 0.0)
 }
 
-pub fn single_vec3() -> Vector3<f32> {
+pub fn all_one_vec3() -> Vector3<f32> {
     Vector3::new(1.0, 1.0, 1.0)
 }
 
 pub fn refract(uv: Vector3<f32>, n: Vector3<f32>, eoe: f32) -> Vector3<f32> {
-    // let cos_theta = -uv.dot(&n).min(1.0);
     let cos_theta: f32 = (1.0 as f32).min(-uv.dot(&n));
     let r_out_perp = eoe * (uv + cos_theta * n);
-    // let r_out_parallel = -((1.0 - r_out_perp.norm().sqrt()).abs()).sqrt() * n;
-
     let a = (1.0 - r_out_perp.norm().sqrt()).abs();
     let r_out_parallel = -a.sqrt() * n;
     r_out_perp + r_out_parallel
