@@ -726,6 +726,7 @@ impl Material for Metal {
         ScatterResult::new(a2, attenuation, scattered_ray)
     }
 }
+
 /// ********************************************
 /// TRAITS
 /// ********************************************
