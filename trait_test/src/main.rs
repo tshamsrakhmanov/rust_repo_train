@@ -26,11 +26,11 @@ fn main() {
     let right_sphere = Sphere::new(Vector3::new(1.0, 0.0, -1.0), 0.5, Box::new(material_right));
 
     // world definition
-    let mut world2 = World::new();
-    world2.add_object(Box::new(ground_sphere));
-    world2.add_object(Box::new(center_sphere));
-    world2.add_object(Box::new(left_sphere));
-    world2.add_object(Box::new(right_sphere));
+    let mut w = World::new();
+    w.add_object(Box::new(ground_sphere));
+    w.add_object(Box::new(center_sphere));
+    w.add_object(Box::new(left_sphere));
+    w.add_object(Box::new(right_sphere));
 
-    let _ = cam1.render(&world2);
+    let _ = cam1.render(&w);
 }

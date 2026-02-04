@@ -54,6 +54,7 @@ pub fn random_vector_by_range(a: f32, b: f32) -> Vector3<f32> {
 }
 pub fn random_unit_vector() -> Vector3<f32> {
     let mut ans: Vector3<f32>;
+    // let mut ans: Vector3<f32> = random_vector_by_range(-1.0, 1.0);
     loop {
         let p = random_vector_by_range(-1.0, 1.0);
         let n = p.magnitude().powi(2);

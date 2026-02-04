@@ -338,20 +338,22 @@ impl Hittable for Sphere {
             temp_res.hit_record.is_outside = false;
         }
 
-        if let Some(a) = self.material.as_any().downcast_ref::<Metal>() {
-            let temp_albedo = a.get_albedo();
+        if let Some(sphere) = self.material.as_any().downcast_ref::<Metal>() {
+            let sphere_material_albedo = sphere.get_albedo();
             temp_res.hit_record.material = Box::new(Metal::new(Vector3::new(
-                temp_albedo.x,
-                temp_albedo.y,
-                temp_albedo.z,
+                sphere_material_albedo.x,
+                sphere_material_albedo.y,
+                sphere_material_albedo.z,
             )));
-        } else if let Some(b) = self.material.as_any().downcast_ref::<Lambretian>() {
-            let temp_albedo = b.get_albedo();
+        } else if let Some(sphere) = self.material.as_any().downcast_ref::<Lambretian>() {
+            let sphere_material_albedo = sphere.get_albedo();
             temp_res.hit_record.material = Box::new(Lambretian::new(Vector3::new(
-                temp_albedo.x,
-                temp_albedo.y,
-                temp_albedo.z,
+                sphere_material_albedo.x,
+                sphere_material_albedo.y,
+                sphere_material_albedo.z,
             )));
+
+            // temp_res.hit_record.material = Box::new(Lambretian::new(Vector3::new(1.0, 1.0, 1.0)));
         }
 
         temp_res
@@ -591,25 +593,16 @@ impl Camera {
             // let temp_ray = Ray::new(result.hit_record.get_point_of_hit(), dir);
             // return 0.5 * Camera::ray_color(&temp_ray, depth - 1, world);
 
-            // let temp_atten = zero_vec3();
-            let temp_atten = single_vec3();
-            let temp_ray_scattered = Ray::new(zero_vec3(), zero_vec3());
-
-            let scatter_result = result.hit_record.material.scatter(
-                ray,
-                &result.hit_record,
-                &temp_atten,
-                &temp_ray_scattered,
-            );
+            let scatter_result = result.hit_record.material.scatter(ray, &result.hit_record);
 
             if scatter_result.is_scatter {
                 let t1: Vector3<f32> =
                     Camera::ray_color(&scatter_result.ray_scattered, depth - 1, world);
                 let t2: Vector3<f32> = scatter_result.attenuation;
-                // let t2: Vector3<f32> = zero_vec3();
-                let t3: Vector3<f32> = t1.cross(&t2);
-                return t3;
+                let t4 = Vector3::new(t1.x * t2.x, t1.y * t2.y, t1.z * t2.z);
+                return t4;
             }
+
             return zero_vec3();
         }
 
@@ -672,13 +665,7 @@ impl Lambretian {
 }
 
 impl Material for Lambretian {
-    fn scatter(
-        &self,
-        ray_in: &Ray,
-        hitRecord: &HitRecord,
-        attenuation: &Vector3<f32>,
-        ray_scattered: &Ray,
-    ) -> ScatterResult {
+    fn scatter(&self, ray_in: &Ray, hitRecord: &HitRecord) -> ScatterResult {
         let mut scatter_direction = hitRecord.normale + random_unit_vector();
         if near_zero(&scatter_direction) {
             scatter_direction = hitRecord.normale;
@@ -742,13 +729,7 @@ impl Metal {
     }
 }
 impl Material for Metal {
-    fn scatter(
-        &self,
-        ray_in: &Ray,
-        hitRecord: &HitRecord,
-        attenuation: &Vector3<f32>,
-        ray_scattered: &Ray,
-    ) -> ScatterResult {
+    fn scatter(&self, ray_in: &Ray, hitRecord: &HitRecord) -> ScatterResult {
         let reflected_vector = reflect(&ray_in.direction, &hitRecord.normale);
         let scattered_ray = Ray::new(hitRecord.point_of_hit, reflected_vector);
         let attenuation = self.albedo;
@@ -776,13 +757,7 @@ impl dyn Hittable {
     }
 }
 pub trait Material: Any {
-    fn scatter(
-        &self,
-        ray_in: &Ray,
-        hitRecord: &HitRecord,
-        attenuation: &Vector3<f32>,
-        ray_scattered: &Ray,
-    ) -> ScatterResult;
+    fn scatter(&self, ray_in: &Ray, hitRecord: &HitRecord) -> ScatterResult;
 }
 impl dyn Material {
     pub fn as_any(&self) -> &dyn Any {
