@@ -63,7 +63,7 @@ impl HitRecord {
             point_of_hit: Vector3::new(0.0, 0.0, 0.0),
             normale: Vector3::new(0.0, 0.0, 0.0),
             is_outside: false,
-            material: Box::new(Metal::new(Vector3::new(1.0, 1.0, 1.0))),
+            material: Box::new(Metal::new(Vector3::new(1.0, 1.0, 1.0), 0.0)),
         }
     }
     pub fn get_normale(&self) -> Vector3<f32> {
@@ -340,11 +340,14 @@ impl Hittable for Sphere {
 
         if let Some(sphere) = self.material.as_any().downcast_ref::<Metal>() {
             let sphere_material_albedo = sphere.get_albedo();
-            temp_res.hit_record.material = Box::new(Metal::new(Vector3::new(
-                sphere_material_albedo.x,
-                sphere_material_albedo.y,
-                sphere_material_albedo.z,
-            )));
+            temp_res.hit_record.material = Box::new(Metal::new(
+                Vector3::new(
+                    sphere_material_albedo.x,
+                    sphere_material_albedo.y,
+                    sphere_material_albedo.z,
+                ),
+                0.0,
+            ));
         } else if let Some(sphere) = self.material.as_any().downcast_ref::<Lambretian>() {
             let sphere_material_albedo = sphere.get_albedo();
             temp_res.hit_record.material = Box::new(Lambretian::new(Vector3::new(
@@ -719,10 +722,11 @@ impl ScatterResult {
 /// ********************************************
 pub struct Metal {
     albedo: Vector3<f32>,
+    fuzz: f32,
 }
 impl Metal {
-    pub fn new(albedo: Vector3<f32>) -> Metal {
-        Metal { albedo }
+    pub fn new(albedo: Vector3<f32>, fuzz: f32) -> Metal {
+        Metal { albedo, fuzz }
     }
     pub fn get_albedo(&self) -> Vector3<f32> {
         self.albedo
@@ -730,10 +734,18 @@ impl Metal {
 }
 impl Material for Metal {
     fn scatter(&self, ray_in: &Ray, hitRecord: &HitRecord) -> ScatterResult {
-        let reflected_vector = reflect(&ray_in.direction, &hitRecord.normale);
+        let mut reflected_vector = reflect(&ray_in.direction, &hitRecord.normale);
+        reflected_vector = reflected_vector.normalize() + (self.fuzz * random_unit_vector());
+        // reflected_vector = reflected_vector.normalize() + Vector3::new(1.0, 1.0, 1.0);
         let scattered_ray = Ray::new(hitRecord.point_of_hit, reflected_vector);
         let attenuation = self.albedo;
-        let temp_ans = ScatterResult::new(true, attenuation, scattered_ray);
+        let a2: bool;
+        if reflected_vector.dot(&hitRecord.normale) > 0.0 {
+            a2 = true;
+        } else {
+            a2 = false;
+        }
+        let temp_ans = ScatterResult::new(a2, attenuation, scattered_ray);
         temp_ans
     }
 }
@@ -745,8 +757,6 @@ pub trait Hittable: Any {
     fn hit_test(&self, ray: &Ray, int: &Interval) -> HitResultTuple;
 }
 
-unsafe impl Sync for World {}
-
 impl dyn Hittable {
     pub fn as_any(&self) -> &dyn Any {
         self
@@ -756,9 +766,11 @@ impl dyn Hittable {
         self
     }
 }
+
 pub trait Material: Any {
     fn scatter(&self, ray_in: &Ray, hitRecord: &HitRecord) -> ScatterResult;
 }
+
 impl dyn Material {
     pub fn as_any(&self) -> &dyn Any {
         self
@@ -768,3 +780,5 @@ impl dyn Material {
         self
     }
 }
+
+unsafe impl Sync for World {}
