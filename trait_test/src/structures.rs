@@ -63,7 +63,7 @@ impl HitRecord {
             point_of_hit: Vector3::new(0.0, 0.0, 0.0),
             normale: Vector3::new(0.0, 0.0, 0.0),
             is_outside: false,
-            material: Box::new(Metal::new(Vector3::new(1.0, 1.0, 1.0), 0.0)),
+            material: Box::new(Metal::new(Vector3::new(0.0, 0.0, 0.0), 1.0)),
         }
     }
     pub fn get_normale(&self) -> Vector3<f32> {
@@ -75,20 +75,6 @@ impl HitRecord {
     pub fn get_point_of_hit(&self) -> Vector3<f32> {
         self.point_of_hit
     }
-    // pub fn new(
-    //     distance: f32,
-    //     point_of_hit: Vector3<f32>,
-    //     normale: Vector3<f32>,
-    //     is_outside: bool,
-    // ) -> HitRecord {
-    //     HitRecord {
-    //         distance: distance,
-    //         point_of_hit: point_of_hit,
-    //         normale: normale,
-    //         is_outside: is_outside,
-    //         material: Box::new(Metal::new(Vector3::new(0.0, 0.0, 0.0))),
-    //     }
-    // }
 }
 
 /// ********************************************
@@ -213,7 +199,6 @@ impl World {
     }
     pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut temp_str = String::new();
-        // temp_str.push_str("[");
         for pos in &self.list_of_objects {
             if let Some(a) = pos.as_any().downcast_ref::<Sphere>() {
                 temp_str.push_str("Some Sphere");
@@ -222,7 +207,6 @@ impl World {
             }
             temp_str.push_str(",");
         }
-        // temp_str.push_str("]");
         write!(f, "World [{}]\n", temp_str)
     }
 }
@@ -233,23 +217,14 @@ impl Hittable for World {
         let mut temp_dist = int.max;
 
         for obj in &self.list_of_objects {
-            // println!("Perform test:");
-            // println!("{:?}", &ray);
-            // println!("{:?}", &obj);
             let temp_int = Interval::new_by_value(int.min, temp_dist);
             let assert_object = obj.hit_test(&ray, &temp_int);
             if assert_object.is_hit {
-                // println!("YES hit");
-                // println!("record is {} ", assert_object.hit_record);
                 if assert_object.hit_record.distance < temp_dist {
                     temp_dist = assert_object.hit_record.distance;
                     result = assert_object;
                 }
-            } else {
-                // println!("NO hit");
             }
-            // println!(">>> temp_dist:{}", temp_dist);
-            // println!("------------");
         }
         result
     }
@@ -338,25 +313,13 @@ impl Hittable for Sphere {
             temp_res.hit_record.is_outside = false;
         }
 
-        if let Some(sphere) = self.material.as_any().downcast_ref::<Metal>() {
-            let sphere_material_albedo = sphere.get_albedo();
-            temp_res.hit_record.material = Box::new(Metal::new(
-                Vector3::new(
-                    sphere_material_albedo.x,
-                    sphere_material_albedo.y,
-                    sphere_material_albedo.z,
-                ),
-                0.0,
-            ));
-        } else if let Some(sphere) = self.material.as_any().downcast_ref::<Lambretian>() {
-            let sphere_material_albedo = sphere.get_albedo();
-            temp_res.hit_record.material = Box::new(Lambretian::new(Vector3::new(
-                sphere_material_albedo.x,
-                sphere_material_albedo.y,
-                sphere_material_albedo.z,
-            )));
-
-            // temp_res.hit_record.material = Box::new(Lambretian::new(Vector3::new(1.0, 1.0, 1.0)));
+        if let Some(mat) = self.material.as_any().downcast_ref::<Metal>() {
+            let a = mat.get_albedo();
+            temp_res.hit_record.material =
+                Box::new(Metal::new(Vector3::new(a.x, a.y, a.z), mat.fuzz));
+        } else if let Some(mat) = self.material.as_any().downcast_ref::<Lambretian>() {
+            let a = mat.get_albedo();
+            temp_res.hit_record.material = Box::new(Lambretian::new(Vector3::new(a.x, a.y, a.z)));
         }
 
         temp_res
@@ -734,9 +697,13 @@ impl Metal {
 }
 impl Material for Metal {
     fn scatter(&self, ray_in: &Ray, hitRecord: &HitRecord) -> ScatterResult {
-        let mut reflected_vector = reflect(&ray_in.direction, &hitRecord.normale);
-        reflected_vector = reflected_vector.normalize() + (self.fuzz * random_unit_vector());
-        // reflected_vector = reflected_vector.normalize() + Vector3::new(1.0, 1.0, 1.0);
+        let rnd_vec = random_unit_vector();
+        let reflected_vector = reflect(&ray_in.direction, &hitRecord.normale).normalize()
+            + (Vector3::new(
+                self.fuzz * rnd_vec.x,
+                self.fuzz * rnd_vec.y,
+                self.fuzz * rnd_vec.z,
+            ));
         let scattered_ray = Ray::new(hitRecord.point_of_hit, reflected_vector);
         let attenuation = self.albedo;
         let a2: bool;
@@ -745,8 +712,7 @@ impl Material for Metal {
         } else {
             a2 = false;
         }
-        let temp_ans = ScatterResult::new(a2, attenuation, scattered_ray);
-        temp_ans
+        ScatterResult::new(a2, attenuation, scattered_ray)
     }
 }
 /// ********************************************
