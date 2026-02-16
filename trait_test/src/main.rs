@@ -5,7 +5,7 @@ mod structures;
 
 fn main() {
     let aspect_ratio: f32 = 16.0 / 9.0;
-    let image_width = 400;
+    let image_width = 1920;
     let samples_per_pixel: i32 = 100;
     let max_depth = 50;
 
@@ -13,8 +13,8 @@ fn main() {
     let lookat = Vector3::new(0.0, 0.0, -1.0);
     let vup = Vector3::new(0.0, 1.0, 0.0);
 
-    let defocus_angle = 0.0;
-    let defocus_dist = 10.0;
+    let defocus_angle = 10.0;
+    let focus_dist = 3.4;
 
     let vfov = 20.0;
 
@@ -28,7 +28,7 @@ fn main() {
         vfov,
         vup,
         defocus_angle,
-        defocus_dist,
+        focus_dist,
     );
 
     let material_ground = Lambretian::new(Vector3::new(0.8, 0.8, 0.0));

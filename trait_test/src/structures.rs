@@ -1,6 +1,6 @@
 use crate::aux_fn::{
-    all_one_vec3, all_zero_vec3, degrees_to_radians, is_face_normal, near_zero, random_unit_vector,
-    reflect, reflectance, refract, write_pixel,
+    all_one_vec3, all_zero_vec3, degrees_to_radians, is_face_normal, near_zero,
+    random_in_unit_disk, random_unit_vector, reflect, reflectance, refract, write_pixel,
 };
 use chrono::Local;
 use nalgebra::Vector3;
@@ -391,6 +391,9 @@ pub struct Camera {
     pixel_sample_scale: f32,
     max_depth: u8,
     rendering_slices: u8,
+    defocus_disk_u: Vector3<f32>,
+    defocus_disk_v: Vector3<f32>,
+    defocus_angle: f32,
 }
 
 impl Camera {
@@ -404,7 +407,7 @@ impl Camera {
         vfov: f32,
         vup: Vector3<f32>,
         defocus_angle: f32,
-        defocus_dist: f32,
+        focus_dist: f32,
     ) -> Camera {
         // general constants
         let rend_slices = 100;
@@ -412,19 +415,15 @@ impl Camera {
 
         let pixel_sample_scale = 1.0 / samples_per_pixel as f32;
         let center = lookfrom;
-        let focal_length: f32 = (lookfrom - lookat).norm();
+        // let focal_length: f32 = (lookfrom - lookat).norm();
         let theta = degrees_to_radians(vfov);
         let h = f32::tan(theta / 2.0);
-        let viewport_height: f32 = 2.0 * h * focal_length;
+        let viewport_height: f32 = 2.0 * h * focus_dist;
         let viewport_width: f32 = viewport_height * (image_width as f32 / image_height as f32);
-
-        // setup of camera vectors
 
         let w = (lookfrom - lookat).normalize();
         let u = (vup.cross(&w)).normalize();
         let v = w.cross(&u);
-
-        // calculated constants
 
         let viewport_u = viewport_width * u;
         let viewport_v = viewport_height * -v;
@@ -432,8 +431,12 @@ impl Camera {
         let pixel_delta_u = viewport_u / (image_width as f32);
         let pixel_delta_v = viewport_v / (image_height as f32);
 
-        let viewport_upper_left = center - (focal_length * w) - viewport_u / 2.0 - viewport_v / 2.0;
+        let viewport_upper_left = center - (focus_dist * w) - viewport_u / 2.0 - viewport_v / 2.0;
         let pixel00loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+
+        let defocus_radius = focus_dist * f32::tan(degrees_to_radians(defocus_angle / 2.0));
+        let defocus_disk_u = u * defocus_radius;
+        let defocus_disk_v = v * defocus_radius;
 
         Camera {
             image_width: image_width,
@@ -446,6 +449,9 @@ impl Camera {
             pixel_sample_scale: pixel_sample_scale,
             max_depth: max_depth,
             rendering_slices: rend_slices,
+            defocus_disk_u: defocus_disk_u,
+            defocus_disk_v: defocus_disk_v,
+            defocus_angle: defocus_angle,
         }
     }
 
@@ -617,20 +623,28 @@ impl Camera {
         )
     }
 
-    /// Generates Ray by random offset from fn sample_square
-    /// Given ray originates from camera center and directed
-    /// to random area aroud pixel on final image
-    ///
-    /// This function is used to generate random rays
-    /// ...and by high order it used ALOT
     pub fn get_ray(&self, i: i32, j: i32) -> Ray {
         let offset = Camera::random_vec_on_xy_plane_in_05_radius();
         let pixel_sample = self.pixel00loc
             + ((i as f32 + offset.x) * self.pixel_delta_u)
             + ((j as f32 + offset.y) * self.pixel_delta_v);
-        let ray_origin = self.center;
+
+        // let ray_origin = self.center;
+        let ray_origin: Vector3<f32>;
+
+        if self.defocus_angle <= 0.0 {
+            ray_origin = self.center;
+        } else {
+            ray_origin = self.defocus_disk_sample();
+        }
+
         let ray_direction = pixel_sample - ray_origin;
         return Ray::new(ray_origin, ray_direction);
+    }
+
+    pub fn defocus_disk_sample(&self) -> Vector3<f32> {
+        let p = random_in_unit_disk();
+        self.center + (p.x * self.defocus_disk_u) + (p.y * self.defocus_disk_v)
     }
     fn get_image_width(&self) -> i32 {
         self.image_width
