@@ -410,7 +410,6 @@ impl Camera {
         focus_dist: f32,
     ) -> Camera {
         // general constants
-        let rend_slices = 100;
         let image_height = ((image_width as f32) / aspect_ratio) as i32;
 
         let pixel_sample_scale = 1.0 / samples_per_pixel as f32;
@@ -448,7 +447,7 @@ impl Camera {
             samples_per_pixel: samples_per_pixel,
             pixel_sample_scale: pixel_sample_scale,
             max_depth: max_depth,
-            rendering_slices: rend_slices,
+            rendering_slices: image_height as u8,
             defocus_disk_u: defocus_disk_u,
             defocus_disk_v: defocus_disk_v,
             defocus_angle: defocus_angle,
