@@ -381,7 +381,6 @@ impl Interval {
 /// CAMERA
 /// ********************************************
 pub struct Camera {
-    aspect_ratio: f32,
     pub image_width: i32,
     image_height: i32,
     center: Vector3<f32>,
@@ -392,15 +391,6 @@ pub struct Camera {
     pixel_sample_scale: f32,
     max_depth: u8,
     rendering_slices: u8,
-    fov: f32,
-    lookfrom: Vector3<f32>,
-    lookat: Vector3<f32>,
-    vup: Vector3<f32>,
-    u: Vector3<f32>,
-    w: Vector3<f32>,
-    v: Vector3<f32>,
-    defocus_angle: f32,
-    defocus_dist: f32,
 }
 
 impl Camera {
@@ -446,7 +436,6 @@ impl Camera {
         let pixel00loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
         Camera {
-            aspect_ratio: aspect_ratio,
             image_width: image_width,
             image_height: image_height,
             center: center,
@@ -457,20 +446,7 @@ impl Camera {
             pixel_sample_scale: pixel_sample_scale,
             max_depth: max_depth,
             rendering_slices: rend_slices,
-            fov: vfov,
-            lookfrom: lookfrom,
-            lookat: lookat,
-            vup: vup,
-            u: u,
-            v: v,
-            w: w,
-            defocus_angle: defocus_angle,
-            defocus_dist: defocus_dist,
         }
-    }
-
-    pub fn _get_aspect(&self) -> f32 {
-        self.aspect_ratio
     }
 
     /// Main function to call for a draw
@@ -686,7 +662,7 @@ impl Lambretian {
 }
 
 impl Material for Lambretian {
-    fn scatter(&self, ray_in: &Ray, rec: &HitRecord) -> ScatterResult {
+    fn scatter(&self, _ray_in: &Ray, rec: &HitRecord) -> ScatterResult {
         let mut scatter_direction = rec.normale + random_unit_vector();
         if near_zero(&scatter_direction) {
             scatter_direction = rec.normale;

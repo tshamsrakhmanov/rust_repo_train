@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 use crate::structures::{Camera, Dielectric, Lambretian, Metal, Sphere, World};
 use nalgebra::Vector3;
 mod aux_fn;
