@@ -1,5 +1,5 @@
 use crate::structures::{Interval, Ray};
-use nalgebra::Vector3;
+use nalgebra::{ComplexField, Vector3};
 use rand::Rng;
 
 pub fn write_pixel(pixel: Vector3<f32>) -> String {
@@ -100,10 +100,19 @@ pub fn all_one_vec3() -> Vector3<f32> {
     Vector3::new(1.0, 1.0, 1.0)
 }
 
-pub fn refract(uv: Vector3<f32>, n: Vector3<f32>, eoe: f32) -> Vector3<f32> {
+pub fn refract(uv: Vector3<f32>, n: Vector3<f32>, etai_over_etat: f32) -> Vector3<f32> {
     let cos_theta: f32 = (1.0 as f32).min(-uv.dot(&n));
-    let r_out_perp = eoe * (uv + cos_theta * n);
-    let a = (1.0 - r_out_perp.norm().sqrt()).abs();
+    let r_out_perp = etai_over_etat * (uv + cos_theta * n);
+    let a = (1.0 - r_out_perp.norm().powi(2)).abs();
     let r_out_parallel = -a.sqrt() * n;
+    // let a = (1.0 - r_out_perp.norm().sqrt()).abs();
+    // let r_out_parallel = -(1.0 - r_out_perp.norm().sqrt()).sqrt() * n;
     r_out_perp + r_out_parallel
+}
+
+pub fn reflectance(cosine: f32, refraction_index: f32) -> f32 {
+    let mut r0 = (1.0 - refraction_index) / (1.0 + refraction_index);
+    r0 = r0 * r0;
+    let answer = r0 + (1.0 - r0) * (1.0 - cosine).powi(5);
+    answer
 }

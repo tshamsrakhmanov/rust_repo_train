@@ -1,6 +1,6 @@
 use crate::aux_fn::{
-    all_one_vec3, all_zero_vec3, is_face_normal, near_zero, random_unit_vector, reflect, refract,
-    write_pixel,
+    all_one_vec3, all_zero_vec3, is_face_normal, near_zero, random_unit_vector, reflect,
+    reflectance, refract, write_pixel,
 };
 use chrono::Local;
 use nalgebra::Vector3;
@@ -752,12 +752,42 @@ impl Material for Dielectric {
         } else {
             ri = self.refraction_index
         }
-
         let unit_direction = ray_in.direction.normalize();
-        let refracted = refract(unit_direction, rec.normale, ri);
-        let scattered = Ray::new(rec.point_of_hit, refracted);
 
-        ScatterResult::new(true, attenuation, scattered)
+        // 1st implementation
+        // let refracted = refract(unit_direction, rec.normale, ri);
+        // let scattered = Ray::new(rec.point_of_hit, refracted);
+        // ScatterResult::new(true, attenuation, scattered)
+
+        // 2nd implementation
+        let min_unit_dir = -unit_direction;
+        let cos_theta: f32 = (1.0 as f32).min(rec.normale.dot(&min_unit_dir));
+        let sin_theta: f32 = (1.0 - cos_theta * cos_theta).sqrt();
+        let cannot_refract = ri * sin_theta;
+        let refract_codition: bool;
+        let reflectance_condition: bool;
+        if reflectance(cos_theta, ri) > rand::random_range(0.0..1.0) {
+            reflectance_condition = true;
+        } else {
+            reflectance_condition = false;
+        }
+        if cannot_refract > 1.0 {
+            refract_codition = true;
+        } else {
+            refract_codition = false;
+        }
+        let temp_direction: Vector3<f32>;
+        if refract_codition || reflectance_condition {
+            temp_direction = reflect(&unit_direction, &rec.normale);
+        } else {
+            temp_direction = refract(unit_direction, rec.normale, ri);
+        }
+
+        ScatterResult::new(
+            true,
+            attenuation,
+            Ray::new(rec.point_of_hit, temp_direction),
+        )
     }
 }
 
