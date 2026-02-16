@@ -556,11 +556,11 @@ impl Camera {
         let mut slices: Vec<(u16, u16)> = Vec::new();
 
         loop {
-            let temp_slice = base + step;
-            if temp_slice < self.image_height as u16 {
-                slices.push((base, temp_slice));
-                base = temp_slice;
-            } else if temp_slice >= self.image_height as u16 {
+            let slice = base + step;
+            if slice < self.image_height as u16 {
+                slices.push((base, slice));
+                base = slice;
+            } else if slice >= self.image_height as u16 {
                 slices.push((base, self.image_height as u16));
                 break;
             }
@@ -695,17 +695,7 @@ pub struct ScatterResult {
     attenuation: Vector3<f32>,
     ray_scattered: Ray,
 }
-impl fmt::Display for ScatterResult {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.logger(f)
-    }
-}
 
-impl fmt::Debug for ScatterResult {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.logger(f)
-    }
-}
 impl ScatterResult {
     pub fn new(is_scatter: bool, attenuation: Vector3<f32>, ray_scattered: Ray) -> ScatterResult {
         ScatterResult {
@@ -713,14 +703,6 @@ impl ScatterResult {
             attenuation: attenuation,
             ray_scattered: ray_scattered,
         }
-    }
-
-    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "ScatterResult [is_scatter:{}, attenuation:{}, ray_scattered:{} ]\n",
-            self.is_scatter, self.attenuation, self.ray_scattered
-        )
     }
 }
 

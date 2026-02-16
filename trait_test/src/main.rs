@@ -1,17 +1,20 @@
-use crate::structures::{Camera, Dielectric, Lambretian, Material, Metal, Sphere, World};
-use nalgebra::{Matrix1, Vector3};
+use crate::{
+    aux_fn::all_zero_vec3,
+    structures::{Camera, Dielectric, Lambretian, Metal, Sphere, World},
+};
+use nalgebra::Vector3;
 use rand::random_range;
 mod aux_fn;
 mod structures;
 
 fn main() {
     let aspect_ratio: f32 = 16.0 / 9.0;
-    let image_width = 1920;
+    let image_width = 300;
     let samples_per_pixel: i32 = 50;
-    let max_depth = 25;
+    let max_depth = 50;
 
     let lookfrom = Vector3::new(13.0, 2.0, 3.0);
-    let lookat = Vector3::new(0.0, 0.0, 0.0);
+    let lookat = all_zero_vec3();
     let vup = Vector3::new(0.0, 1.0, 0.0);
 
     let defocus_angle = 0.6;
@@ -60,7 +63,6 @@ fn main() {
             );
 
             if (center - Vector3::new(4.0, 0.2, 0.0)).norm() > 0.9 {
-                let sphere_material: Box<dyn Material>;
                 if choose_mat < 0.8 {
                     let albedo = Vector3::new(
                         random_range(0.0..1.0) * random_range(0.0..1.0),
