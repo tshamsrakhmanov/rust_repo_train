@@ -22,7 +22,7 @@ fn main() {
         jumps,
         lookfrom,
         lookat,
-        20.0,
+        90.0,
         vup,
     );
 
