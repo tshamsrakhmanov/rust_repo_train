@@ -393,35 +393,52 @@ pub struct Camera {
     max_depth: u8,
     rendering_slices: u8,
     fov: f32,
+    lookfrom: Vector3<f32>,
+    lookat: Vector3<f32>,
+    vup: Vector3<f32>,
+    u: Vector3<f32>,
+    w: Vector3<f32>,
+    v: Vector3<f32>,
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f32, image_width: i32, samples_per_pixel: i32, jumps: u8) -> Camera {
+    pub fn new(
+        aspect_ratio: f32,
+        image_width: i32,
+        samples_per_pixel: i32,
+        max_depth: u8,
+        lookfrom: Vector3<f32>,
+        lookat: Vector3<f32>,
+        vfov: f32,
+        vup: Vector3<f32>,
+    ) -> Camera {
         // general constants
-        let center = all_zero_vec3();
-        let max_depth = jumps;
         let rend_slices = 100;
-        let focal_length: f32 = 1.0;
-        let fov: f32 = 90.0;
+        let image_height = ((image_width as f32) / aspect_ratio) as i32;
 
-        // calculate camera variables
-        let theta = degrees_to_radians(fov);
+        let pixel_sample_scale = 1.0 / samples_per_pixel as f32;
+        let center = lookfrom;
+        let focal_length: f32 = (lookfrom - lookat).norm();
+        let theta = degrees_to_radians(vfov);
         let h = f32::tan(theta / 2.0);
-        // let viewport_height: f32 = 2.0;
         let viewport_height: f32 = 2.0 * h * focal_length;
+        let viewport_width: f32 = viewport_height * (image_width as f32 / image_height as f32);
+
+        // setup of camera vectors
+
+        let w = (lookfrom - lookat).normalize();
+        let u = (vup.cross(&w)).normalize();
+        let v = w.cross(&u);
 
         // calculated constants
-        let image_height = ((image_width as f32) / aspect_ratio) as i32;
-        let pixel_sample_scale = 1.0 / samples_per_pixel as f32;
-        let viewport_width: f32 = viewport_height * (image_width as f32 / image_height as f32);
-        let viewport_u = Vector3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vector3::new(0.0, -viewport_height, 0.0);
+
+        let viewport_u = viewport_width * u;
+        let viewport_v = viewport_height * -v;
+
         let pixel_delta_u = viewport_u / (image_width as f32);
         let pixel_delta_v = viewport_v / (image_height as f32);
-        let viewport_u = Vector3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vector3::new(0.0, -viewport_height, 0.0);
-        let viewport_upper_left =
-            center - Vector3::new(0.0, 0.0, focal_length) - viewport_u / 2.0 - viewport_v / 2.0;
+
+        let viewport_upper_left = center - (focal_length * w) - viewport_u / 2.0 - viewport_v / 2.0;
         let pixel00loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
         Camera {
@@ -436,7 +453,13 @@ impl Camera {
             pixel_sample_scale: pixel_sample_scale,
             max_depth: max_depth,
             rendering_slices: rend_slices,
-            fov: fov,
+            fov: vfov,
+            lookfrom: lookfrom,
+            lookat: lookat,
+            vup: vup,
+            u: u,
+            v: v,
+            w: w,
         }
     }
 
