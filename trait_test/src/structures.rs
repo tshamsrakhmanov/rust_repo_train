@@ -399,6 +399,8 @@ pub struct Camera {
     u: Vector3<f32>,
     w: Vector3<f32>,
     v: Vector3<f32>,
+    defocus_angle: f32,
+    defocus_dist: f32,
 }
 
 impl Camera {
@@ -411,6 +413,8 @@ impl Camera {
         lookat: Vector3<f32>,
         vfov: f32,
         vup: Vector3<f32>,
+        defocus_angle: f32,
+        defocus_dist: f32,
     ) -> Camera {
         // general constants
         let rend_slices = 100;
@@ -460,6 +464,8 @@ impl Camera {
             u: u,
             v: v,
             w: w,
+            defocus_angle: defocus_angle,
+            defocus_dist: defocus_dist,
         }
     }
 

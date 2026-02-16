@@ -121,3 +121,17 @@ pub fn degrees_to_radians(deg: f32) -> f32 {
     let answer = deg * PI / 180.0;
     answer
 }
+
+pub fn random_in_unit_disk() -> Vector3<f32> {
+    let mut answer: Vector3<f32>;
+    loop {
+        answer = Vector3::new(
+            rand::random_range(-1.0..1.0),
+            rand::random_range(-1.0..1.0),
+            0.0,
+        );
+        if answer.norm().sqrt() < 1.0 {
+            return answer;
+        }
+    }
+}

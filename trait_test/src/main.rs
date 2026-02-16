@@ -7,23 +7,30 @@ mod structures;
 
 fn main() {
     let aspect_ratio: f32 = 16.0 / 9.0;
-    let image_width = 1920;
-    let sample_per_pixel: i32 = 100;
-    let jumps = 50;
+    let image_width = 400;
+    let samples_per_pixel: i32 = 100;
+    let max_depth = 50;
 
     let lookfrom = Vector3::new(-2.0, 2.0, 1.0);
     let lookat = Vector3::new(0.0, 0.0, -1.0);
     let vup = Vector3::new(0.0, 1.0, 0.0);
 
+    let defocus_angle = 0.0;
+    let defocus_dist = 10.0;
+
+    let vfov = 20.0;
+
     let cam1 = Camera::new(
         aspect_ratio,
         image_width,
-        sample_per_pixel,
-        jumps,
+        samples_per_pixel,
+        max_depth,
         lookfrom,
         lookat,
-        90.0,
+        vfov,
         vup,
+        defocus_angle,
+        defocus_dist,
     );
 
     let material_ground = Lambretian::new(Vector3::new(0.8, 0.8, 0.0));
