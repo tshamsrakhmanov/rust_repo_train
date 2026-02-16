@@ -1,5 +1,6 @@
-use crate::structures::{Camera, Dielectric, Lambretian, Metal, Sphere, World};
-use nalgebra::Vector3;
+use crate::structures::{Camera, Dielectric, Lambretian, Material, Metal, Sphere, World};
+use nalgebra::{Matrix1, Vector3};
+use rand::random_range;
 mod aux_fn;
 mod structures;
 
@@ -48,6 +49,45 @@ fn main() {
     w.add_object(s1);
     w.add_object(s2);
     w.add_object(s3);
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = rand::random_range(0.0..1.0);
+            let center = Vector3::new(
+                a as f32 + 0.9 * random_range(0.0..1.0),
+                0.2,
+                b as f32 + 0.9 * random_range(0.0..1.0),
+            );
+
+            if (center - Vector3::new(4.0, 0.2, 0.0)).norm() > 0.9 {
+                let sphere_material: Box<dyn Material>;
+                if choose_mat < 0.8 {
+                    let albedo = Vector3::new(
+                        random_range(0.0..1.0) * random_range(0.0..1.0),
+                        random_range(0.0..1.0) * random_range(0.0..1.0),
+                        random_range(0.0..1.0) * random_range(0.0..1.0),
+                    );
+                    let sp_mat = Box::new(Lambretian::new(albedo));
+                    let sp = Box::new(Sphere::new(center, 0.2, sp_mat));
+                    w.add_object(sp);
+                } else if choose_mat < 0.95 {
+                    let albedo = Vector3::new(
+                        random_range(0.0..1.0),
+                        random_range(0.0..1.0),
+                        random_range(0.0..1.0),
+                    );
+                    let fuzz = random_range(0.0..0.5);
+                    let sp_mat = Box::new(Metal::new(albedo, fuzz));
+                    let sp = Box::new(Sphere::new(center, 0.2, sp_mat));
+                    w.add_object(sp);
+                } else {
+                    let sp_mat = Box::new(Dielectric::new(1.5));
+                    let sp = Box::new(Sphere::new(center, 0.2, sp_mat));
+                    w.add_object(sp);
+                }
+            }
+        }
+    }
 
     let _ = cam1.render(&w);
 }
