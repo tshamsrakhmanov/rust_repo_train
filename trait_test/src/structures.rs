@@ -1,6 +1,6 @@
 use crate::aux_fn::{
-    all_one_vec3, all_zero_vec3, is_face_normal, near_zero, random_unit_vector, reflect,
-    reflectance, refract, write_pixel,
+    all_one_vec3, all_zero_vec3, degrees_to_radians, is_face_normal, near_zero, random_unit_vector,
+    reflect, reflectance, refract, write_pixel,
 };
 use chrono::Local;
 use nalgebra::Vector3;
@@ -392,6 +392,7 @@ pub struct Camera {
     pixel_sample_scale: f32,
     max_depth: u8,
     rendering_slices: u8,
+    fov: f32,
 }
 
 impl Camera {
@@ -401,7 +402,13 @@ impl Camera {
         let max_depth = jumps;
         let rend_slices = 100;
         let focal_length: f32 = 1.0;
-        let viewport_height: f32 = 2.0;
+        let fov: f32 = 90.0;
+
+        // calculate camera variables
+        let theta = degrees_to_radians(fov);
+        let h = f32::tan(theta / 2.0);
+        // let viewport_height: f32 = 2.0;
+        let viewport_height: f32 = 2.0 * h * focal_length;
 
         // calculated constants
         let image_height = ((image_width as f32) / aspect_ratio) as i32;
@@ -429,6 +436,7 @@ impl Camera {
             pixel_sample_scale: pixel_sample_scale,
             max_depth: max_depth,
             rendering_slices: rend_slices,
+            fov: fov,
         }
     }
 
@@ -573,6 +581,8 @@ impl Camera {
             // let temp_ray = Ray::new(result.hit_record.get_point_of_hit(), dir);
             // return 0.5 * Camera::ray_color(&temp_ray, depth - 1, world);
 
+            // 3rd implementation - give back color based on material paramaters
+            //
             let scatter_result = result.hit_record.material.scatter(ray, &result.hit_record);
 
             if scatter_result.is_scatter {
@@ -594,7 +604,7 @@ impl Camera {
     }
 
     /// Gives randomized vector3 in -0.5...+0.5 in XY plane
-    fn sample_square() -> Vector3<f32> {
+    fn random_vec_on_xy_plane_in_05_radius() -> Vector3<f32> {
         Vector3::new(
             rand::rng().random_range(0.0..1.0) - 0.5,
             rand::rng().random_range(0.0..1.0) - 0.5,
@@ -609,7 +619,7 @@ impl Camera {
     /// This function is used to generate random rays
     /// ...and by high order it used ALOT
     pub fn get_ray(&self, i: i32, j: i32) -> Ray {
-        let offset = Camera::sample_square();
+        let offset = Camera::random_vec_on_xy_plane_in_05_radius();
         let pixel_sample = self.pixel00loc
             + ((i as f32 + offset.x) * self.pixel_delta_u)
             + ((j as f32 + offset.y) * self.pixel_delta_v);
@@ -624,6 +634,8 @@ impl Camera {
         self.image_height
     }
     fn get_samples_per_pixel(&self) -> i32 {
+        // 3rd implementation - give back color based on material paraaaaers
+        //
         self.samples_per_pixel
     }
 }

@@ -1,5 +1,7 @@
+use std::f32::consts::PI;
+
 use crate::structures::{Interval, Ray};
-use nalgebra::{ComplexField, Vector3};
+use nalgebra::Vector3;
 use rand::Rng;
 
 pub fn write_pixel(pixel: Vector3<f32>) -> String {
@@ -105,8 +107,6 @@ pub fn refract(uv: Vector3<f32>, n: Vector3<f32>, etai_over_etat: f32) -> Vector
     let r_out_perp = etai_over_etat * (uv + cos_theta * n);
     let a = (1.0 - r_out_perp.norm().powi(2)).abs();
     let r_out_parallel = -a.sqrt() * n;
-    // let a = (1.0 - r_out_perp.norm().sqrt()).abs();
-    // let r_out_parallel = -(1.0 - r_out_perp.norm().sqrt()).sqrt() * n;
     r_out_perp + r_out_parallel
 }
 
@@ -114,5 +114,10 @@ pub fn reflectance(cosine: f32, refraction_index: f32) -> f32 {
     let mut r0 = (1.0 - refraction_index) / (1.0 + refraction_index);
     r0 = r0 * r0;
     let answer = r0 + (1.0 - r0) * (1.0 - cosine).powi(5);
+    answer
+}
+
+pub fn degrees_to_radians(deg: f32) -> f32 {
+    let answer = deg * PI / 180.0;
     answer
 }
