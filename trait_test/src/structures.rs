@@ -532,7 +532,7 @@ impl Camera {
         for y_pos in slice.0..slice.1 {
             for x_pos in 0..self.image_width {
                 let mut temp_color = all_zero_vec3();
-                for _ in 0..100 {
+                for _ in 0..self.samples_per_pixel {
                     let temp_ray = self.get_ray(x_pos, y_pos as i32);
                     let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
                     temp_color = temp_color + new_color;
