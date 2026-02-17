@@ -561,7 +561,7 @@ impl Camera {
         // if not hit - just draw background
         let unit_direction = ray.get_direction().normalize();
         let a = 0.5 * (unit_direction.y + 1.0);
-        let bg_color = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
+        let bg_color = (1.0 - a) * Vector3::new(0.0, 0.0, 0.0) + a * Vector3::new(0.2, 0.4, 0.7);
         return bg_color;
     }
 
