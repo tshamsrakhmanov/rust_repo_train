@@ -1,7 +1,6 @@
 use crate::aux_fn::{
     all_one_vec3, all_zero_vec3, degrees_to_radians, is_face_normal, near_zero,
-    random_in_unit_disk, random_on_hemisphere, random_unit_vector, reflect, reflectance, refract,
-    write_pixel,
+    random_in_unit_disk, random_unit_vector, reflect, reflectance, refract, write_pixel,
 };
 use chrono::Local;
 use indicatif::ParallelProgressIterator;
@@ -64,15 +63,6 @@ impl HitRecord {
             material: Box::new(Metal::new(all_zero_vec3(), 1.0)),
         }
     }
-    // pub fn get_normale(&self) -> Vector3<f32> {
-    //     self.normale
-    // }
-    // pub fn get_distance(&self) -> f32 {
-    //     self.distance
-    // }
-    // pub fn get_point_of_hit(&self) -> Vector3<f32> {
-    //     self.point_of_hit
-    // }
 }
 
 /// ********************************************
@@ -87,31 +77,12 @@ pub struct HitResultTuple {
     pub hit_record: HitRecord,
 }
 
-impl fmt::Display for HitResultTuple {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.logger(f)
-    }
-}
-
-impl fmt::Debug for HitResultTuple {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.logger(f)
-    }
-}
-
 impl HitResultTuple {
     pub fn new(is_hit: bool, hit_record: HitRecord) -> HitResultTuple {
         HitResultTuple {
             is_hit: is_hit,
             hit_record: hit_record,
         }
-    }
-    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "HitResultTuple[ is_hit: {}, hit_record: {} ]\n",
-            self.is_hit, self.hit_record
-        )
     }
 }
 
@@ -126,17 +97,6 @@ pub struct Ray {
     direction: Vector3<f32>,
 }
 
-impl fmt::Display for Ray {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.logger(f)
-    }
-}
-
-impl fmt::Debug for Ray {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.logger(f)
-    }
-}
 impl Ray {
     pub fn new(origin: Vector3<f32>, direction: Vector3<f32>) -> Ray {
         Ray {
@@ -154,17 +114,6 @@ impl Ray {
     pub fn get_direction(&self) -> Vector3<f32> {
         self.direction
     }
-    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let p0 = self.origin.x;
-        let p1 = self.origin.y;
-        let p2 = self.origin.z;
-        let p3 = self.direction.x;
-        let p4 = self.direction.y;
-        let p5 = self.direction.z;
-        let s1 = format!("(x:{}, y:{}, z:{})", p0, p1, p2);
-        let s2 = format!("(x:{}, y:{}, z:{})", p3, p4, p5);
-        write!(f, "Ray [origin: {}, direction: {}]\n", s1, s2)
-    }
 }
 
 /// ********************************************
@@ -173,17 +122,6 @@ impl Ray {
 
 pub struct World {
     list_of_objects: Vec<Box<dyn Hittable>>,
-}
-impl fmt::Display for World {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.logger(f)
-    }
-}
-
-impl fmt::Debug for World {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.logger(f)
-    }
 }
 
 impl World {
@@ -195,19 +133,6 @@ impl World {
 
     pub fn add_object(&mut self, object: Box<dyn Hittable>) {
         self.list_of_objects.push(object.into());
-    }
-    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut temp_str = String::new();
-        for pos in &self.list_of_objects {
-            if let Some(a) = pos.as_any().downcast_ref::<Sphere>() {
-                let t = format!("Sphere at: {}", a.origin);
-                temp_str.push_str(&t);
-            } else {
-                println!("Unknown object")
-            }
-            temp_str.push_str(",");
-        }
-        write!(f, "World [{}]\n", temp_str)
     }
 }
 
@@ -239,17 +164,6 @@ pub struct Sphere {
     radius: f32,
     material: Box<dyn Material>,
 }
-impl fmt::Display for Sphere {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.logger(f)
-    }
-}
-
-impl fmt::Debug for Sphere {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.logger(f)
-    }
-}
 
 impl Sphere {
     pub fn new(origin: Vector3<f32>, radius: f32, material: Box<dyn Material>) -> Sphere {
@@ -258,14 +172,6 @@ impl Sphere {
             radius: radius,
             material: material,
         }
-    }
-
-    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let p0 = self.origin.x;
-        let p1 = self.origin.y;
-        let p2 = self.origin.z;
-        let s1 = format!("(x:{}, y:{}, z:{})", p0, p1, p2);
-        write!(f, "Sphere [origin:{}, radius:{}]\n", s1, self.radius)
     }
 }
 
@@ -346,11 +252,6 @@ pub struct Interval {
     min: f32,
     max: f32,
 }
-impl fmt::Display for Interval {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.logger(f)
-    }
-}
 
 impl Interval {
     pub fn new_by_value(min: f32, max: f32) -> Interval {
@@ -366,9 +267,6 @@ impl Interval {
         }
     }
 
-    pub fn logger(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Interval [min:{}, max:{}]\n", self.min, self.max)
-    }
     pub fn _size(&self) -> f32 {
         self.max - self.min
     }
@@ -505,18 +403,7 @@ impl Camera {
         file.write(bytes)?;
 
         // debug info at the end to terminal
-        println!("--------------");
-        println!("Total render time: {:?} sec", diff_time);
-        println!(
-            "X:{:?}, Y:{:?}, RAYS:{:?}",
-            self.get_image_width(),
-            self.get_image_heigth(),
-            self.get_samples_per_pixel()
-        );
-        println!("--------------");
-        println!("Filename:");
-        println!("{}", &file_name);
-        println!("--------------");
+        println!("{}", file_name);
 
         Ok(())
     }
@@ -561,7 +448,7 @@ impl Camera {
         // if not hit - just draw background
         let unit_direction = ray.get_direction().normalize();
         let a = 0.5 * (unit_direction.y + 1.0);
-        let bg_color = (1.0 - a) * Vector3::new(0.0, 0.0, 0.0) + a * Vector3::new(0.2, 0.4, 0.7);
+        let bg_color = (1.0 - a) * Vector3::new(1.0, 1.0, 1.0) + a * Vector3::new(0.5, 0.7, 1.0);
         return bg_color;
     }
 
@@ -595,17 +482,6 @@ impl Camera {
     pub fn defocus_disk_sample(&self) -> Vector3<f32> {
         let p = random_in_unit_disk();
         self.center + (p.x * self.defocus_disk_u) + (p.y * self.defocus_disk_v)
-    }
-    fn get_image_width(&self) -> i32 {
-        self.image_width
-    }
-    fn get_image_heigth(&self) -> i32 {
-        self.image_height
-    }
-    fn get_samples_per_pixel(&self) -> i32 {
-        // 3rd implementation - give back color based on material paraaaaers
-        //
-        self.samples_per_pixel
     }
 }
 /// ********************************************
@@ -762,15 +638,15 @@ pub trait Hittable: Any {
     fn hit_test(&self, ray: &Ray, int: &Interval) -> HitResultTuple;
 }
 
-impl dyn Hittable {
-    pub fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    pub fn _as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
-}
+// impl dyn Hittable {
+//     pub fn as_any(&self) -> &dyn Any {
+//         self
+//     }
+//
+//     pub fn as_any_mut(&mut self) -> &mut dyn Any {
+//         self
+//     }
+// }
 
 pub trait Material: Any {
     fn scatter(&self, ray_in: &Ray, rec: &HitRecord) -> ScatterResult;
