@@ -3,6 +3,8 @@ use crate::aux_fn::{
     random_in_unit_disk, random_unit_vector, reflect, reflectance, refract, write_pixel,
 };
 use chrono::Local;
+use indicatif::ParallelProgressIterator;
+use itertools::Itertools;
 use nalgebra::Vector3;
 use rand::Rng;
 use rayon::prelude::*;
@@ -459,16 +461,24 @@ impl Camera {
         // start the clock
         let start_time = std::time::Instant::now();
 
-        // section image by height and make slices out of it
-        // prepare buffer line to fill up in multi_thread_rendering
-        let slices = self.slices_preparation();
-        let mut buffer_line = String::new();
-
-        // generate indexed sub-results as outcome of multi_thread_rendering
-        // and push it to buffer
-        for pos in self.multi_thread_rendering(slices, world) {
-            buffer_line.push_str(&pos.1);
-        }
+        let buffer_line = (0..self.image_height)
+            .cartesian_product(0..self.image_width)
+            .collect::<Vec<(i32, i32)>>()
+            .into_par_iter()
+            .progress_count(self.image_width as u64 * self.image_height as u64)
+            .map(|(y, x)| {
+                // println!("{}{}", y, x);
+                let mut temp_color = all_zero_vec3();
+                for _ in 0..self.samples_per_pixel {
+                    let temp_ray = self.get_ray(x, y as i32);
+                    let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
+                    temp_color = temp_color + new_color;
+                }
+                // let p = write_pixel(temp_color * self.pixel_sample_scale);
+                write_pixel(temp_color * self.pixel_sample_scale)
+            })
+            .collect::<Vec<String>>()
+            .join("\n");
 
         // stop the clock
         let end_time = std::time::Instant::now();
@@ -516,8 +526,10 @@ impl Camera {
         slices: Vec<(u16, u16)>,
         world: &World,
     ) -> Vec<(usize, String)> {
+        let len_tmp = slices.len();
         slices
             .into_par_iter()
+            .progress_count(len_tmp as u64)
             .enumerate()
             .map(|(idx, single_slice)| {
                 let result = (idx, self.single_thread_rendering(single_slice, world));
