@@ -68,7 +68,7 @@ pub fn random_unit_vector() -> Vector3<f32> {
 }
 
 // used on the case, when render gives grayscale rays - legacy
-pub fn _random_on_hemisphere(normal: Vector3<f32>) -> Vector3<f32> {
+pub fn random_on_hemisphere(normal: Vector3<f32>) -> Vector3<f32> {
     let on_unit_sphere: Vector3<f32> = random_unit_vector();
     if on_unit_sphere.dot(&normal) > 0.0 {
         return on_unit_sphere;

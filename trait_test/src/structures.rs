@@ -1,6 +1,7 @@
 use crate::aux_fn::{
     all_one_vec3, all_zero_vec3, degrees_to_radians, is_face_normal, near_zero,
-    random_in_unit_disk, random_unit_vector, reflect, reflectance, refract, write_pixel,
+    random_in_unit_disk, random_on_hemisphere, random_unit_vector, reflect, reflectance, refract,
+    write_pixel,
 };
 use chrono::Local;
 use indicatif::ParallelProgressIterator;
@@ -534,12 +535,12 @@ impl Camera {
         // if hit detected - color the ray in approptirate colors
         if result.is_hit {
             // 1st basic implementation to draw spheres as normales map
-            // let a = 0.5 * (result.hit_record.get_normale() + Vector3::new(1.0, 1.0, 1.0));
+            // let a = 0.5 * (result.hit_record.normale + Vector3::new(1.0, 1.0, 1.0));
             // return a;
 
             // 2nd implementation - just gray scale world based on depth
-            // let dir = random_on_hemisphere(result.hit_record.get_normale()) + random_unit_vector();
-            // let temp_ray = Ray::new(result.hit_record.get_point_of_hit(), dir);
+            // let dir = random_on_hemisphere(result.hit_record.normale + random_unit_vector());
+            // let temp_ray = Ray::new(result.hit_record.point_of_hit, dir);
             // return 0.5 * Camera::ray_color(&temp_ray, depth - 1, world);
 
             // 3rd implementation - give back color based on material paramaters
@@ -579,7 +580,6 @@ impl Camera {
             + ((i as f32 + offset.x) * self.pixel_delta_u)
             + ((j as f32 + offset.y) * self.pixel_delta_v);
 
-        // let ray_origin = self.center;
         let ray_origin: Vector3<f32>;
 
         if self.defocus_angle <= 0.0 {
