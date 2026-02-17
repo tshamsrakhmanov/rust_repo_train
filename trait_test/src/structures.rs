@@ -392,7 +392,6 @@ pub struct Camera {
     samples_per_pixel: i32,
     pixel_sample_scale: f32,
     max_depth: u8,
-    rendering_slices: u8,
     defocus_disk_u: Vector3<f32>,
     defocus_disk_v: Vector3<f32>,
     defocus_angle: f32,
@@ -449,7 +448,6 @@ impl Camera {
             samples_per_pixel: samples_per_pixel,
             pixel_sample_scale: pixel_sample_scale,
             max_depth: max_depth,
-            rendering_slices: image_height as u8,
             defocus_disk_u: defocus_disk_u,
             defocus_disk_v: defocus_disk_v,
             defocus_angle: defocus_angle,
@@ -467,15 +465,17 @@ impl Camera {
             .into_par_iter()
             .progress_count(self.image_width as u64 * self.image_height as u64)
             .map(|(y, x)| {
-                // println!("{}{}", y, x);
-                let mut temp_color = all_zero_vec3();
-                for _ in 0..self.samples_per_pixel {
-                    let temp_ray = self.get_ray(x, y as i32);
-                    let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
-                    temp_color = temp_color + new_color;
-                }
-                // let p = write_pixel(temp_color * self.pixel_sample_scale);
-                write_pixel(temp_color * self.pixel_sample_scale)
+                let tmp_color = (0..self.samples_per_pixel)
+                    .into_par_iter()
+                    .map(|_| {
+                        let temp_ray = self.get_ray(x, y as i32);
+                        Camera::ray_color(&temp_ray, self.max_depth, world)
+                    })
+                    .sum::<Vector3<f32>>();
+
+                let temp_pix = write_pixel(tmp_color * self.pixel_sample_scale);
+
+                format!("{}", temp_pix)
             })
             .collect::<Vec<String>>()
             .join("\n");
@@ -518,67 +518,6 @@ impl Camera {
         println!("--------------");
 
         Ok(())
-    }
-
-    /// God forbid you to understand what it is...
-    fn multi_thread_rendering(
-        &self,
-        slices: Vec<(u16, u16)>,
-        world: &World,
-    ) -> Vec<(usize, String)> {
-        let len_tmp = slices.len();
-        slices
-            .into_par_iter()
-            .progress_count(len_tmp as u64)
-            .enumerate()
-            .map(|(idx, single_slice)| {
-                let result = (idx, self.single_thread_rendering(single_slice, world));
-                result
-            })
-            .collect()
-    }
-
-    /// FN of single thread for later use
-    fn single_thread_rendering(&self, slice: (u16, u16), world: &World) -> String {
-        let mut buffer_line = String::new();
-        for y_pos in slice.0..slice.1 {
-            for x_pos in 0..self.image_width {
-                let mut temp_color = all_zero_vec3();
-                for _ in 0..self.samples_per_pixel {
-                    let temp_ray = self.get_ray(x_pos, y_pos as i32);
-                    let new_color = Camera::ray_color(&temp_ray, self.max_depth, world);
-                    temp_color = temp_color + new_color;
-                }
-                let p = write_pixel(temp_color * self.pixel_sample_scale);
-                buffer_line.push_str(&p);
-            }
-        }
-        buffer_line
-    }
-
-    /// Gives back Vec of image slices by height
-    ///
-    /// Used in multi_thread_rendering
-    fn slices_preparation(&self) -> Vec<(u16, u16)> {
-        // once more lets make rendering slices...
-        // for fucks sake - why i didn't save'd it to stash last time....(
-
-        let mut base = 0;
-        let step = (self.image_height / self.rendering_slices as i32) as u16;
-        let mut slices: Vec<(u16, u16)> = Vec::new();
-
-        loop {
-            let slice = base + step;
-            if slice < self.image_height as u16 {
-                slices.push((base, slice));
-                base = slice;
-            } else if slice >= self.image_height as u16 {
-                slices.push((base, self.image_height as u16));
-                break;
-            }
-        }
-
-        slices
     }
 
     /// Sends given Ray into the world and gives back a color to draw
